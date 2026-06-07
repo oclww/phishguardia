@@ -1,324 +1,181 @@
 'use client'
 import Link from 'next/link'
-import {
-  Brain, BarChart2, Layers, FileText, Code2, Puzzle,
-  LayoutDashboard, Bell, Link2, FlaskConical, Database, KeyRound,
-  Check, Minus,
-} from 'lucide-react'
+import { Brain, Code2, BarChart2, Bell, Shield, Zap, ArrowRight, Check } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 
+const C = {
+  bg: '#0d1117', panel: '#161c26', panel2: '#10161e',
+  line: '#1e2a3a', line2: '#253347',
+  muted: '#374f67', subtle: '#4d6580', sec: '#7a96b0', pri: '#c8d8e8', bright: '#eaf2ff',
+  cyan: '#41e8c4', violet: '#a78bfa', blue: '#5e9ef7',
+  green: '#32d583', red: '#ff5f6d', amber: '#f5a623',
+}
+
+// Ce qu'on a vraiment construit
 const features = [
   {
     icon: Brain,
-    color: '#7dd3fc',
-    title: 'Détection IA Temps Réel',
-    description:
-      'Notre moteur IA analyse chaque email en moins de 50 ms grâce à des modèles de deep learning entraînés sur des milliards de menaces. La détection s\'améliore en continu via l\'apprentissage fédéré, sans jamais exposer vos données.',
-  },
-  {
-    icon: BarChart2,
-    color: '#a78bfa',
-    title: 'Analyse Comportementale',
-    description:
-      'PhishGuard établit un profil comportemental pour chaque expéditeur et domaine. Les anomalies — changements soudains de style d\'écriture, d\'heure d\'envoi ou de liens inclus — déclenchent immédiatement une alerte.',
-  },
-  {
-    icon: Layers,
-    color: '#34d399',
-    title: 'Protection Multi-Canaux',
-    description:
-      'Au-delà de l\'email, notre plateforme sécurise Slack, Teams, SharePoint et les formulaires web. Une seule console unifiée pour surveiller l\'ensemble de vos vecteurs d\'attaque.',
-  },
-  {
-    icon: FileText,
-    color: '#fbbf24',
-    title: 'Rapports & Analytics',
-    description:
-      'Générez des rapports exécutifs PDF en un clic avec graphiques, tendances mensuelles et recommandations prioritaires. Les tableaux de bord temps réel donnent à votre équipe SOC une visibilité instantanée.',
+    color: C.cyan,
+    title: 'Moteur de détection IA',
+    what: 'Ce qu\'on a construit',
+    desc: 'Analyse heuristique multicritère (domaine, URLs, contenu, expéditeur) combinée à Gemini 2.0 Flash. Le résultat : un score de 0 à 100 et une liste de signaux détectés, lisibles par un humain.',
+    bullets: ['Score de risque structuré', 'Signaux explicables', 'Gemini 2.0 Flash intégré', 'Analyse < 2 secondes'],
   },
   {
     icon: Code2,
-    color: '#7dd3fc',
-    title: 'API REST Complète',
-    description:
-      'Une API RESTful documentée avec OpenAPI 3.0, SDK disponibles en Python, Node.js et Go. Intégrez la détection PhishGuard directement dans votre pipeline CI/CD ou votre propre SOAR.',
+    color: C.violet,
+    title: 'API REST',
+    what: 'Ce qu\'on a construit',
+    desc: 'Un endpoint clair : POST /api/v1/analyze. Vous envoyez les métadonnées de l\'email, on retourne le score. Compatible avec tout ce qui peut faire une requête HTTP.',
+    bullets: ['Réponse JSON structurée', 'Auth Bearer token', 'Documentation complète', 'Compatible tous langages'],
   },
   {
-    icon: Puzzle,
-    color: '#a78bfa',
-    title: 'Intégrations Natives',
-    description:
-      'Connecteurs prêts à l\'emploi pour Microsoft 365, Google Workspace, Okta, Splunk et PagerDuty. L\'installation se fait en moins de 10 minutes sans modifier votre infrastructure existante.',
-  },
-  {
-    icon: LayoutDashboard,
-    color: '#34d399',
-    title: 'Dashboard Unifié',
-    description:
-      'Vue 360° de votre posture de sécurité email : score de risque global, carte des menaces géolocalisées, top des campagnes actives et suivi des indicateurs clés en temps réel.',
+    icon: BarChart2,
+    color: C.amber,
+    title: 'Dashboard & Rapports',
+    what: 'Ce qu\'on a construit',
+    desc: 'Un dashboard temps réel connecté à Supabase. Emails analysés, menaces détectées, score moyen, export CSV. Mise à jour automatique sans rafraîchir la page.',
+    bullets: ['Stats temps réel', 'Historique des emails', 'Export CSV', 'Breakdown par type de menace'],
   },
   {
     icon: Bell,
-    color: '#fb7185',
-    title: 'Alertes Intelligentes',
-    description:
-      'Système d\'alertes contextuel qui réduit les faux positifs de 90% grâce à la corrélation multi-signaux. Les notifications sont enrichies avec des playbooks de remédiation prêts à exécuter.',
+    color: C.red,
+    title: 'Alertes',
+    what: 'Ce qu\'on a construit',
+    desc: 'Centre d\'alertes pour les menaces détectées. Chaque alerte affiche le score IA, la sévérité, le type de menace et l\'expéditeur.',
+    bullets: ['Classement par sévérité', 'Score IA visible', 'Flux en temps réel', 'Filtres et recherche'],
   },
   {
-    icon: Link2,
-    color: '#fbbf24',
-    title: 'Protection URL',
-    description:
-      'Chaque lien contenu dans les emails est analysé à la volée : réputation de domaine, certificat SSL, contenu de la page et redirections suspectes. Les URL malveillantes sont neutralisées avant le clic.',
+    icon: Shield,
+    color: C.green,
+    title: 'Gateways supportés',
+    what: 'Documentation disponible',
+    desc: 'Guides d\'intégration écrits pour les principaux gateways email. L\'API fonctionne avec n\'importe quel système capable de faire une requête HTTP.',
+    bullets: ['Postfix', 'Microsoft 365', 'Google Workspace', 'Exchange + n8n'],
   },
   {
-    icon: FlaskConical,
-    color: '#7dd3fc',
-    title: 'Sandbox Email',
-    description:
-      'Les pièces jointes suspectes sont exécutées dans un environnement isolé pour observer leur comportement réel. Le rapport de détonation inclut captures d\'écran, flux réseau et indicateurs de compromission.',
-  },
-  {
-    icon: Database,
-    color: '#a78bfa',
-    title: 'SIEM Integration',
-    description:
-      'Export natif au format CEF/LEEF vers Splunk, QRadar, Microsoft Sentinel et Elastic. Les événements PhishGuard enrichissent votre corrélation SIEM sans configuration manuelle.',
-  },
-  {
-    icon: KeyRound,
-    color: '#34d399',
-    title: 'SSO/SAML',
-    description:
-      'Authentification unique via SAML 2.0 et OIDC, compatible avec tous les fournisseurs d\'identité majeurs. Le provisionnement SCIM automatise la gestion des accès à grande échelle.',
+    icon: Zap,
+    color: C.blue,
+    title: 'Authentification & Facturation',
+    what: 'Ce qu\'on a construit',
+    desc: 'Login email/mot de passe et Google OAuth. Facturation via Stripe avec 3 plans. Gestion des abonnements directement depuis le dashboard.',
+    bullets: ['Google OAuth', 'Reset mot de passe', 'Stripe intégré', '3 plans tarifaires'],
   },
 ]
 
-const competitors = [
-  {
-    name: 'PhishGuard.IA',
-    isUs: true,
-    aiScore: '98%',
-    price: 'Depuis 29€/mois',
-    easeOfUse: '9.4/10',
-    responseTime: '< 50 ms',
-  },
-  {
-    name: 'Proofpoint',
-    isUs: false,
-    aiScore: '84%',
-    price: 'Depuis 450€/mois',
-    easeOfUse: '6.8/10',
-    responseTime: '~800 ms',
-  },
-  {
-    name: 'Mimecast',
-    isUs: false,
-    aiScore: '79%',
-    price: 'Depuis 380€/mois',
-    easeOfUse: '6.2/10',
-    responseTime: '~1 200 ms',
-  },
-  {
-    name: 'Barracuda',
-    isUs: false,
-    aiScore: '76%',
-    price: 'Depuis 290€/mois',
-    easeOfUse: '7.1/10',
-    responseTime: '~950 ms',
-  },
+const notBuiltYet = [
+  'Sandbox pièces jointes',
+  'Intégration SIEM native',
+  'SSO / SAML',
+  'SDK Python / Go (docs uniquement)',
+  'Application mobile',
+  'Analyse Slack / Teams',
 ]
 
-const comparisonFields = [
-  { label: 'Score IA', key: 'aiScore' as const },
-  { label: 'Tarif d\'entrée', key: 'price' as const },
-  { label: 'Facilité d\'utilisation', key: 'easeOfUse' as const },
-  { label: 'Temps de réponse', key: 'responseTime' as const },
-]
+const fade = (delay = 0) => ({
+  initial: { opacity: 0, y: 20 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true },
+  transition: { duration: 0.5, delay },
+})
 
 export default function FeaturesPage() {
   return (
-    <div className="min-h-screen bg-[#060d18]">
+    <div style={{ background: C.bg, minHeight: '100vh' }}>
       <Header />
-      <main>
-        {/* Hero */}
-        <section className="pt-32 pb-20 px-4 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#a78bfa]/30 bg-[#a78bfa]/10 text-[#a78bfa] text-xs font-medium mb-6">
-              Fonctionnalités
-            </span>
-            <h1
-              className="text-4xl md:text-5xl font-bold text-[#eaf2fb] mb-6 max-w-3xl mx-auto leading-tight"
-              style={{ fontFamily: 'Syne, sans-serif' }}
-            >
-              Des fonctionnalités de pointe pour une protection maximale
-            </h1>
-            <p className="text-[#7a96b4] text-lg max-w-2xl mx-auto">
-              PhishGuard.IA combine intelligence artificielle de dernière génération et expérience
-              utilisateur soignée pour offrir la meilleure défense contre le phishing.
+
+      {/* Hero */}
+      <section style={{ padding: '120px 24px 70px', textAlign: 'center' }}>
+        <motion.div {...fade()}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '5px 14px', borderRadius: 6, border: `1px solid ${C.line2}`, background: C.panel, marginBottom: 28 }}>
+            <span style={{ fontSize: 11, fontWeight: 600, color: C.violet, letterSpacing: '.08em' }}>CE QU&apos;ON A VRAIMENT CONSTRUIT</span>
+          </div>
+          <h1 style={{ fontFamily: 'Syne, sans-serif', fontSize: 'clamp(36px, 6vw, 60px)', fontWeight: 900, color: C.bright, letterSpacing: '-.04em', marginBottom: 18, lineHeight: .95 }}>
+            Fonctionnalités<br/>
+            <span style={{ color: C.violet }}>sans bullshit.</span>
+          </h1>
+          <p style={{ fontSize: 16, color: C.sec, lineHeight: 1.8, maxWidth: 520, margin: '0 auto' }}>
+            On liste exactement ce qu&apos;on a construit. Pas de feature roadmap vendue comme existante. Ce qui est là, c&apos;est là. Ce qui manque, on le dit aussi.
+          </p>
+        </motion.div>
+      </section>
+
+      {/* Features grid */}
+      <section style={{ padding: '20px 24px 80px' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20 }}>
+          {features.map((feat, i) => (
+            <motion.div key={feat.title} {...fade(i * .07)}
+              style={{ padding: 28, background: C.panel, border: `1px solid ${C.line}`, borderRadius: 16, display: 'flex', flexDirection: 'column', gap: 0 }}>
+              {/* Icon + what */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${feat.color}12`, border: `1px solid ${feat.color}20` }}>
+                  <feat.icon size={20} style={{ color: feat.color }}/>
+                </div>
+                <span style={{ fontSize: 10, fontWeight: 700, color: C.green, letterSpacing: '.06em', padding: '3px 8px', borderRadius: 4, background: `${C.green}10`, border: `1px solid ${C.green}20` }}>
+                  {feat.what}
+                </span>
+              </div>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: C.bright, marginBottom: 10, fontFamily: 'Syne, sans-serif' }}>{feat.title}</h3>
+              <p style={{ fontSize: 13, color: C.subtle, lineHeight: 1.75, marginBottom: 18, flex: 1 }}>{feat.desc}</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 7, borderTop: `1px solid ${C.line}`, paddingTop: 16 }}>
+                {feat.bullets.map(b => (
+                  <span key={b} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: C.sec }}>
+                    <Check size={12} style={{ color: feat.color, flexShrink: 0 }}/>{b}
+                  </span>
+                ))}
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* Ce qu'on n'a PAS encore */}
+      <section style={{ padding: '60px 24px 80px', background: C.panel2, borderTop: `1px solid ${C.line}`, borderBottom: `1px solid ${C.line}` }}>
+        <div style={{ maxWidth: 700, margin: '0 auto' }}>
+          <motion.div {...fade()} style={{ textAlign: 'center', marginBottom: 40 }}>
+            <h2 style={{ fontFamily: 'Syne, sans-serif', fontSize: 'clamp(22px, 3vw, 34px)', fontWeight: 800, color: C.bright, letterSpacing: '-.03em', marginBottom: 12 }}>
+              Ce qu&apos;on n&apos;a <span style={{ color: C.amber }}>pas encore</span>
+            </h2>
+            <p style={{ fontSize: 14, color: C.subtle, lineHeight: 1.8 }}>
+              On préfère être honnêtes plutôt que de mentir sur nos capacités. Ces features sont sur la roadmap, pas en production.
             </p>
           </motion.div>
-        </section>
-
-        {/* Feature cards */}
-        <section className="pb-24 px-4">
-          <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-6">
-            {features.map((feat, i) => {
-              const Icon = feat.icon
-              return (
-                <motion.div
-                  key={feat.title}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: '-60px' }}
-                  transition={{ delay: (i % 3) * 0.1, duration: 0.5 }}
-                  className="rounded-2xl border border-[#1a2740] bg-[#0c1526] p-6 hover:border-[#1a2740]/80 hover:bg-[#0c1526]/90 transition-all group"
-                >
-                  <div
-                    className="w-11 h-11 rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110"
-                    style={{ backgroundColor: `${feat.color}15`, border: `1px solid ${feat.color}30` }}
-                  >
-                    <Icon size={20} style={{ color: feat.color }} />
-                  </div>
-                  <h3 className="text-base font-semibold text-[#eaf2fb] mb-2">{feat.title}</h3>
-                  <p className="text-sm text-[#7a96b4] leading-relaxed">{feat.description}</p>
-                </motion.div>
-              )
-            })}
-          </div>
-        </section>
-
-        {/* Comparison vs competitors */}
-        <section className="py-24 px-4 border-t border-[#1a2740]">
-          <div className="max-w-5xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-              className="text-center mb-14"
-            >
-              <h2 className="text-3xl font-bold text-[#eaf2fb] mb-4" style={{ fontFamily: 'Syne, sans-serif' }}>
-                Pourquoi choisir PhishGuard.IA ?
-              </h2>
-              <p className="text-[#7a96b4] max-w-xl mx-auto">
-                Comparez nos performances face aux solutions historiques du marché.
-              </p>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="rounded-2xl border border-[#1a2740] overflow-hidden"
-            >
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-[#1a2740]">
-                    <th className="text-left px-6 py-5 text-sm font-semibold text-[#7a96b4] w-1/4">Critère</th>
-                    {competitors.map(c => (
-                      <th
-                        key={c.name}
-                        className={`px-6 py-5 text-sm font-semibold text-center ${c.isUs ? 'text-[#7dd3fc]' : 'text-[#eaf2fb]'}`}
-                      >
-                        {c.isUs ? (
-                          <span className="inline-flex flex-col items-center gap-1">
-                            {c.name}
-                            <span className="bg-[#34d399]/20 text-[#34d399] text-[10px] font-bold px-2 py-0.5 rounded-full border border-[#34d399]/30">
-                              Meilleur choix
-                            </span>
-                          </span>
-                        ) : c.name}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {comparisonFields.map((field, i) => (
-                    <tr key={field.key} className={`border-b border-[#1a2740] ${i % 2 === 0 ? 'bg-[#0c1526]/30' : ''}`}>
-                      <td className="px-6 py-4 text-sm text-[#7a96b4] font-medium">{field.label}</td>
-                      {competitors.map(c => (
-                        <td
-                          key={c.name}
-                          className={`px-6 py-4 text-sm text-center font-medium ${c.isUs ? 'text-[#7dd3fc]' : 'text-[#eaf2fb]'}`}
-                        >
-                          {c[field.key]}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: 0.2 }}
-              className="mt-6 grid md:grid-cols-4 gap-4"
-            >
-              {[
-                { label: 'Score IA', value: '+14 pts', desc: 'vs. Proofpoint' },
-                { label: 'Prix d\'entrée', value: '15× moins cher', desc: 'vs. Proofpoint' },
-                { label: 'Facilité', value: '+2.6 pts', desc: 'vs. Mimecast' },
-                { label: 'Latence', value: '16× plus rapide', desc: 'vs. Mimecast' },
-              ].map(stat => (
-                <div key={stat.label} className="rounded-xl border border-[#1a2740] bg-[#0c1526] p-4 text-center">
-                  <div className="text-xl font-bold text-[#34d399] mb-1" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
-                    {stat.value}
-                  </div>
-                  <div className="text-xs text-[#eaf2fb] font-medium">{stat.label}</div>
-                  <div className="text-xs text-[#7a96b4]">{stat.desc}</div>
-                </div>
-              ))}
-            </motion.div>
-          </div>
-        </section>
-
-        {/* CTA */}
-        <section className="py-24 px-4 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="max-w-2xl mx-auto"
-          >
-            <div
-              className="rounded-3xl border border-[#1a2740] bg-[#0c1526] p-12"
-              style={{ boxShadow: '0 0 80px rgba(125, 211, 252, 0.05)' }}
-            >
-              <h2 className="text-3xl font-bold text-[#eaf2fb] mb-4" style={{ fontFamily: 'Syne, sans-serif' }}>
-                Prêt à voir PhishGuard en action ?
-              </h2>
-              <p className="text-[#7a96b4] mb-8 leading-relaxed">
-                Démarrez votre essai gratuit de 14 jours. Sans carte bancaire, sans engagement.
-                Configurez votre première protection en moins de 10 minutes.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="/register">
-                  <button className="px-8 py-3.5 bg-gradient-to-r from-[#7dd3fc] to-[#a78bfa] text-[#060d18] font-semibold rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-[#7dd3fc]/20">
-                    Démarrer gratuitement →
-                  </button>
-                </Link>
-                <Link href="/contact">
-                  <button className="px-8 py-3.5 border border-[#1a2740] text-[#eaf2fb] font-semibold rounded-xl hover:border-[#7dd3fc]/40 hover:bg-[#7dd3fc]/5 transition-all">
-                    Demander une démo
-                  </button>
-                </Link>
+          <motion.div {...fade(.1)}
+            style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
+            {notBuiltYet.map(item => (
+              <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: C.panel, border: `1px solid ${C.line}`, borderRadius: 10 }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: C.muted, flexShrink: 0 }}/>
+                <span style={{ fontSize: 13, color: C.subtle }}>{item}</span>
               </div>
-            </div>
+            ))}
           </motion.div>
-        </section>
-      </main>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section style={{ padding: '80px 24px', textAlign: 'center' }}>
+        <motion.div {...fade()}>
+          <h2 style={{ fontFamily: 'Syne, sans-serif', fontSize: 'clamp(22px, 3vw, 34px)', fontWeight: 800, color: C.bright, letterSpacing: '-.03em', marginBottom: 12 }}>
+            Ça vous convient ?
+          </h2>
+          <p style={{ fontSize: 14, color: C.subtle, marginBottom: 28 }}>Créez un compte, testez l&apos;API, dites-nous ce qu&apos;il manque.</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'center' }}>
+            <Link href="/register">
+              <button className="inline-flex items-center gap-2 px-7 py-3 bg-[#eaf2fb] text-[#060d18] font-bold text-sm rounded-xl cursor-pointer hover:bg-white hover:-translate-y-0.5 active:scale-95 transition-all duration-300">
+                Essayer gratuitement <ArrowRight size={14}/>
+              </button>
+            </Link>
+            <Link href="/dashboard/api">
+              <button style={{ padding: '12px 28px', background: 'transparent', color: C.pri, fontWeight: 500, fontSize: 14, borderRadius: 10, border: `1px solid ${C.line2}`, cursor: 'pointer' }}>
+                Voir la doc API
+              </button>
+            </Link>
+          </div>
+        </motion.div>
+      </section>
+
       <Footer />
     </div>
   )
