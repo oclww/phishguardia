@@ -80,50 +80,109 @@ async function fetchEmailContent(accessToken: string, messageId: string) {
   return { from, subject, body, gmailMessageId: messageId }
 }
 
-// ─── Analyze signals ──────────────────────────────────────────────────────────
+// ─── Analyze signals — v2 engine (mirrors /api/v1/analyze) ───────────────────
 function analyzeDomainSpoofing(from: string): number {
-  const domain = from.split('@')[1]?.toLowerCase() || ''
-  const spoofPatterns = [/micros0ft|m1crosoft/i, /paypa1|p4ypal/i, /g00gle|go0gle/i, /amaz0n|amaz-on/i, /-secure\.|\.secure-/i, /alert\.|warning\./i]
+  const raw = from.toLowerCase()
+  const domain = raw.split('@')[1]?.split('>')[0]?.trim() || ''
   let score = 0
-  if (spoofPatterns.some(p => p.test(domain) || p.test(from))) score += 25
-  if ((domain.match(/\./g) || []).length > 3) score += 10
-  if (/\d{3,}/.test(domain)) score += 8
-  return Math.min(score, 30)
+  const typosquat = [/micros[0o]ft|m[i1]crosoft/, /paypa[l1]|p[a4]ypal/, /g[o0][o0]gle/, /amaz[o0]n|arnazon/, /app[l1]e/, /faceb[o0][o0]k/, /secure-|-secure|-login|-verify/, /alert\.|warning\./, /netfl[i1]x/]
+  if (typosquat.some(p => p.test(raw) || p.test(domain))) score += 20
+  if (domain.includes('xn--')) score += 15
+  if ((domain.match(/\./g) || []).length > 4) score += 8
+  if (/\d{4,}/.test(domain)) score += 5
+  if (['.tk','.ml','.ga','.cf','.gq','.xyz','.top','.win','.loan','.click'].some(t => domain.endsWith(t))) score += 8
+  return Math.min(score, 25)
+}
+
+function analyzeDisplayNameSpoof(from: string): number {
+  const m = from.match(/^(.+?)\s*<(.+?)>$/)
+  if (!m) return 0
+  const name = m[1].trim().toLowerCase()
+  const emailDomain = m[2].toLowerCase().split('@')[1] || ''
+  const brands = ['paypal','apple','google','microsoft','amazon','netflix','facebook','linkedin','bank','crédit','impots','caf','ameli']
+  const freemail = /gmail\.com|yahoo\.|hotmail\.|outlook\.com/
+  let score = 0
+  if (brands.some(b => name.includes(b) && !emailDomain.includes(b))) score += 20
+  if (freemail.test(emailDomain) && name.length > 5 && !freemail.test(name)) score += 10
+  return Math.min(score, 20)
 }
 
 function analyzeUrgency(subject: string, body: string): number {
-  const words = ['urgent', 'immédiat', 'action requise', 'suspended', 'compte bloqué', 'account suspended', 'expiring', 'last warning', '24 hours', '24 heures', 'compromised', 'verify your account']
-  const combined = `${subject} ${body}`.toLowerCase()
-  return Math.min(words.filter(w => combined.includes(w)).length * 4, 20)
+  const c = `${subject} ${body}`.toLowerCase()
+  const words = ['urgent','action requise','action required','suspended','suspendu','compte bloqué','account blocked','24 hours','24 heures','last warning','dernier avertissement','compromised','compromis','verify now','permanently deleted']
+  return Math.min(words.filter(w => c.includes(w)).length * 4, 20)
+}
+
+function analyzeSuspiciousLinks(body: string): number {
+  const urls = body.match(/https?:\/\/[^\s"'<>)]+/gi) || []
+  let score = 0
+  for (const url of urls.slice(0, 8)) {
+    try {
+      const u = new URL(url)
+      const h = u.hostname.toLowerCase()
+      if (/^\d{1,3}(\.\d{1,3}){3}$/.test(h)) score += 18
+      if (/bit\.ly|tinyurl|t\.co|goo\.gl|ow\.ly/.test(h)) score += 12
+      if (/login|verify|confirm|secure|password|authenticate/i.test(u.pathname)) score += 7
+      if (u.port && !['80','443'].includes(u.port)) score += 8
+    } catch { }
+  }
+  return Math.min(score, 20)
 }
 
 function analyzeSubjectPatterns(subject: string): number {
-  const patterns = [/\$\d+|\€\d+/i, /password|mot de passe/i, /!!+|urgent!/i, /you have won|vous avez gagné/i, /confirm your account/i, /account.*suspended/i]
-  return Math.min(patterns.filter(p => p.test(subject)).length * 5, 15)
+  const p: [RegExp, number][] = [
+    [/account.*(suspended|blocked|disabled)/i, 8],
+    [/confirm.*(identity|account)/i, 6],
+    [/\$[\d,]+|\€[\d,]+/i, 6],
+    [/re:|fwd:|fw:/i, 4],
+    [/you have won|vous avez gagné/i, 10],
+    [/click (here|now)/i, 5],
+    [/invoice|facture/i, 4],
+  ]
+  return Math.min(p.reduce((s, [re, pts]) => re.test(subject) ? s + pts : s, 0), 15)
 }
 
-function analyzeSenderAnomaly(from: string, subject: string): number {
+function analyzeBEC(from: string, subject: string, body: string): number {
+  const c = `${subject} ${body}`.toLowerCase()
+  const freemail = /gmail\.com|yahoo\.|hotmail\.|outlook\.com/
   let score = 0
-  if (/ceo|cfo|cto|directeur/i.test(subject) && /gmail|yahoo|hotmail/i.test(from)) score += 15
+  if (/ceo|cfo|cto|directeur|président/i.test(subject) && freemail.test(from)) score += 15
+  if (/wire.transfer|virement|bank.transfer|send.money|iban|swift/i.test(c)) score += 12
+  if (/gift.card|bitcoin|crypto|ethereum/i.test(c)) score += 12
+  if (/confidential|keep.this.between|discreet/i.test(c)) score += 8
   return Math.min(score, 15)
 }
 
+function analyzeContentPatterns(body: string): number {
+  const p: [RegExp, number][] = [
+    [/enter.*(password|username|credentials)/i, 10],
+    [/update.*(payment|billing|credit.card)/i, 8],
+    [/social.security|ssn/i, 12],
+    [/dear (customer|client|user|member)/i, 3],
+    [/click.the.link.below|follow.this.link/i, 5],
+  ]
+  return Math.min(p.reduce((s, [re, pts]) => re.test(body) ? s + pts : s, 0), 15)
+}
+
 function computeScore(from: string, subject: string, body: string) {
-  const signals = {
-    domainSpoofing: analyzeDomainSpoofing(from),
-    urgencyKeywords: analyzeUrgency(subject, body),
-    subjectPatterns: analyzeSubjectPatterns(subject),
-    senderAnomaly: analyzeSenderAnomaly(from, subject),
-  }
-  const raw = Object.values(signals).reduce((a, b) => a + b, 0)
-  const score = Math.max(0, Math.min(100, Math.round((raw / 80) * 100) + Math.floor(Math.random() * 5) - 2))
+  const domainSpoofing     = analyzeDomainSpoofing(from)
+  const displayNameSpoof   = analyzeDisplayNameSpoof(from)
+  const urgencyKeywords    = analyzeUrgency(subject, body)
+  const suspiciousLinks    = analyzeSuspiciousLinks(body)
+  const subjectPatterns    = analyzeSubjectPatterns(subject)
+  const becIndicators      = analyzeBEC(from, subject, body)
+  const contentPatterns    = analyzeContentPatterns(body)
+
+  const score = Math.min(domainSpoofing + displayNameSpoof + urgencyKeywords + suspiciousLinks + subjectPatterns + becIndicators + contentPatterns, 100)
 
   let status = 'safe', severity = 'low', threatType = 'none'
-  if (score >= 75) { status = 'blocked'; severity = 'critical'; threatType = signals.domainSpoofing > 15 ? 'spear-phishing' : 'phishing' }
-  else if (score >= 45) { status = 'quarantined'; severity = score >= 60 ? 'high' : 'medium'; threatType = 'phishing' }
-  else if (signals.senderAnomaly >= 12) { status = 'quarantined'; severity = 'high'; threatType = 'bec' }
+  if (becIndicators >= 12)                  { status = 'blocked'; severity = 'critical'; threatType = 'bec' }
+  else if (displayNameSpoof >= 15 && score >= 50) { status = 'blocked'; severity = 'critical'; threatType = 'spear-phishing' }
+  else if (score >= 75)  { status = 'blocked'; severity = 'critical'; threatType = domainSpoofing >= 15 ? 'spear-phishing' : 'phishing' }
+  else if (score >= 50)  { status = 'quarantined'; severity = score >= 65 ? 'high' : 'medium'; threatType = 'phishing' }
+  else if (score >= 25)  { status = 'quarantined'; severity = 'low'; threatType = 'spam' }
 
-  return { score, status, severity, threatType, signals }
+  return { score, status, severity, threatType }
 }
 
 // ─── Optional Gemini enrichment ───────────────────────────────────────────────

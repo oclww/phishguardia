@@ -62,11 +62,11 @@ export default function PricingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
 
   return (
-    <div className="min-h-screen bg-[#060d18]">
+    <div className="min-h-screen bg-[#0d1117]">
       <Header />
       <main>
         {/* Hero */}
-        <section className="pt-32 pb-16 px-4 text-center">
+        <section className="pt-32 pb-16 px-4 text-center" style={{ background: '#0d1117' }}>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
             <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#7dd3fc]/30 bg-[#7dd3fc]/10 text-[#7dd3fc] text-xs font-medium mb-6">
               Tarifs simples et transparents
@@ -105,11 +105,11 @@ export default function PricingPage() {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.1 }}
-                className={`relative rounded-2xl border p-8 flex flex-col ${plan.highlighted ? 'border-[#7dd3fc]/40 bg-[#0c1526] shadow-2xl shadow-[#7dd3fc]/10' : 'border-[#1a2740] bg-[#0c1526]/80'}`}
+                className={`relative rounded-2xl border p-8 flex flex-col ${plan.highlighted ? 'border-[#41e8c4]/40 bg-[#161c26] shadow-2xl shadow-[#41e8c4]/10' : 'border-[#1a2740] bg-[#161c26]/80'}`}
               >
                 {plan.highlighted && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="bg-gradient-to-r from-[#7dd3fc] to-[#a78bfa] text-[#060d18] text-xs font-bold px-4 py-1.5 rounded-full">
+                    <span className="bg-gradient-to-r from-[#41e8c4] to-[#a78bfa] text-[#0d1117] text-xs font-bold px-4 py-1.5 rounded-full">
                       Le plus populaire
                     </span>
                   </div>
@@ -141,11 +141,11 @@ export default function PricingPage() {
                     ))}
                   </ul>
                 </div>
-                <Link href={plan.id === 'enterprise' ? '/contact' : '/register'} className="mt-auto">
+                <Link href="/contact" className="mt-auto">
                   <button
                     className={`w-full py-3 rounded-xl font-semibold text-sm transition-all ${plan.highlighted
-                      ? 'bg-gradient-to-r from-[#7dd3fc] to-[#a78bfa] text-[#060d18] hover:opacity-90 shadow-lg shadow-[#7dd3fc]/20'
-                      : 'border border-[#1a2740] text-[#eaf2fb] hover:border-[#7dd3fc]/40 hover:bg-[#7dd3fc]/5'
+                      ? 'bg-gradient-to-r from-[#41e8c4] to-[#a78bfa] text-[#0d1117] hover:opacity-90 shadow-lg shadow-[#41e8c4]/20'
+                      : 'border border-[#1a2740] text-[#eaf2fb] hover:border-[#41e8c4]/40 hover:bg-[#41e8c4]/5'
                     }`}
                   >
                     {plan.cta}
@@ -162,7 +162,7 @@ export default function PricingPage() {
             <h2 className="text-2xl font-bold text-[#eaf2fb] text-center mb-12" style={{ fontFamily: 'Syne, sans-serif' }}>
               Comparaison détaillée
             </h2>
-            <div className="rounded-2xl border border-[#1a2740] overflow-hidden">
+            <div className="rounded-2xl border border-[#1a2740] bg-[#161c26] overflow-hidden">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-[#1a2740]">
@@ -174,7 +174,7 @@ export default function PricingPage() {
                 </thead>
                 <tbody>
                   {comparisonFeatures.map((f, i) => (
-                    <tr key={f.name} className={`border-b border-[#1a2740] ${i % 2 === 0 ? 'bg-[#0c1526]/30' : ''}`}>
+                    <tr key={f.name} className={`border-b border-[#1a2740] ${i % 2 === 0 ? 'bg-[#0d1117]/40' : ''}`}>
                       <td className="px-6 py-3.5 text-sm text-[#7a96b4]">{f.name}</td>
                       {(['starter', 'pro', 'enterprise'] as const).map(plan => (
                         <td key={plan} className="px-6 py-3.5 text-center">
@@ -203,7 +203,7 @@ export default function PricingPage() {
             </h2>
             <div className="space-y-3">
               {faqs.map((faq, i) => (
-                <div key={i} className="rounded-xl border border-[#1a2740] bg-[#0c1526]/80 overflow-hidden">
+                <div key={i} className="rounded-xl border border-[#1a2740] bg-[#161c26] overflow-hidden">
                   <button
                     onClick={() => setOpenFaq(openFaq === i ? null : i)}
                     className="w-full flex items-center justify-between px-5 py-4 text-left"
@@ -235,10 +235,13 @@ export default function PricingPage() {
             <h2 className="text-3xl font-bold text-[#eaf2fb] mb-4" style={{ fontFamily: 'Syne, sans-serif' }}>
               Prêt à sécuriser vos emails ?
             </h2>
-            <p className="text-[#7a96b4] mb-8">14 jours d&apos;essai gratuit. Sans carte bancaire.</p>
-            <Link href="/register">
-              <button className="px-8 py-3.5 bg-gradient-to-r from-[#7dd3fc] to-[#a78bfa] text-[#060d18] font-semibold rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-[#7dd3fc]/20">
-                Démarrer l&apos;essai gratuit →
+            <p className="text-[#7a96b4] mb-8">
+              Commencez par nous contacter — nous vous guiderons vers la formule adaptée à vos
+              besoins.
+            </p>
+            <Link href="/contact">
+              <button className="px-8 py-3.5 bg-gradient-to-r from-[#41e8c4] to-[#a78bfa] text-[#0d1117] font-semibold rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-[#41e8c4]/20">
+                Nous contacter →
               </button>
             </Link>
           </div>

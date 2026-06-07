@@ -1,188 +1,175 @@
 'use client'
-import { useState } from 'react'
-import Link from 'next/link'
-import { Calendar, Clock, Tag, ArrowRight } from 'lucide-react'
+import { Calendar, Clock, PenLine } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
-import { Badge } from '@/components/ui/Badge'
 
+/**
+ * These are real articles we plan to write.
+ * Status 'coming' = À venir, 'draft' = En cours de rédaction.
+ * No fake authors, no fake stats, no fake dates.
+ */
 const posts = [
   {
-    slug: 'comprendre-le-spear-phishing',
-    title: 'Comprendre le Spear-Phishing : la menace ciblée',
-    excerpt: 'Le spear-phishing représente aujourd\'hui 65% des attaques réussies. Découvrez comment les cybercriminels ciblent vos employés et comment s\'en protéger efficacement.',
-    category: 'Phishing',
-    author: 'Sophie Leclerc',
-    date: '15 mars 2024',
-    readingTime: 8,
-    image: 'linear-gradient(135deg, #fb7185/20, #a78bfa/20)',
-    tags: ['spear-phishing', 'menaces', 'protection'],
+    slug: 'reconnaitre-email-phishing-2026',
+    title: 'Comment reconnaître un email de phishing en 2026',
+    excerpt:
+      'Les techniques de phishing ont évolué bien au-delà des fautes d\'orthographe et des princes nigérians. En 2026, les attaquants utilisent l\'IA générative pour rédiger des emails parfaits, usurper des identités avec précision et contourner les filtres classiques. Cet article détaille les signaux concrets à surveiller et les réflexes à adopter.',
+    category: 'Guide pratique',
+    status: 'coming' as const,
+    readingTime: 7,
+    color: '#41e8c4',
+    tags: ['phishing', 'détection', 'bonnes pratiques'],
   },
   {
-    slug: 'ia-detection-phishing-2024',
-    title: 'Comment l\'IA révolutionne la détection du phishing en 2024',
-    excerpt: 'Les modèles de deep learning atteignent désormais 99.7% de précision dans la détection d\'emails malveillants. Plongée dans les technologies qui protègent vos équipes.',
-    category: 'Technique',
-    author: 'Antoine Bernard',
-    date: '8 mars 2024',
-    readingTime: 12,
-    image: 'linear-gradient(135deg, #7dd3fc/20, #34d399/20)',
-    tags: ['IA', 'deep learning', 'détection'],
-  },
-  {
-    slug: 'guide-securite-email-pme',
-    title: 'Guide complet : sécurité email pour les PME en 2024',
-    excerpt: 'Les PME sont 3x plus ciblées que les grandes entreprises mais disposent de moins de ressources. Voici votre guide pratique pour sécuriser vos communications.',
-    category: 'Guide',
-    author: 'Julien Martin',
-    date: '1 mars 2024',
-    readingTime: 15,
-    image: 'linear-gradient(135deg, #fbbf24/20, #fb7185/20)',
-    tags: ['PME', 'guide', 'sécurité email'],
-  },
-  {
-    slug: 'attaques-bec-business-email',
-    title: 'BEC : quand les escrocs se font passer pour votre PDG',
-    excerpt: 'Les attaques de compromission d\'email professionnel (BEC) ont coûté 2.9 milliards de dollars en 2023. Apprenez à identifier et bloquer ces arnaques sophistiquées.',
-    category: 'Actualités',
-    author: 'Camille Rousseau',
-    date: '22 février 2024',
+    slug: 'pme-cibles-phishing',
+    title: 'Pourquoi les PME sont les premières cibles du phishing',
+    excerpt:
+      'Les petites et moyennes entreprises concentrent aujourd\'hui l\'essentiel des tentatives de phishing. Moins protégées que les grands groupes, elles sont aussi perçues comme des portes d\'entrée vers leurs donneurs d\'ordre. Décryptage d\'une réalité que beaucoup sous-estiment encore.',
+    category: 'Analyse',
+    status: 'coming' as const,
     readingTime: 6,
-    image: 'linear-gradient(135deg, #a78bfa/20, #7dd3fc/20)',
-    tags: ['BEC', 'fraude', 'prévention'],
+    color: '#a78bfa',
+    tags: ['PME', 'risques', 'cybersécurité'],
   },
   {
-    slug: 'zero-trust-securite-email',
-    title: 'Zero Trust appliqué à la sécurité email',
-    excerpt: 'Le modèle Zero Trust transforme la manière dont les entreprises approchent la sécurité email. Comment l\'implémenter concrètement dans votre organisation.',
-    category: 'Technique',
-    author: 'Pierre Moreau',
-    date: '15 février 2024',
-    readingTime: 10,
-    image: 'linear-gradient(135deg, #34d399/20, #7dd3fc/20)',
-    tags: ['zero trust', 'architecture', 'sécurité'],
-  },
-  {
-    slug: 'formation-employees-phishing',
-    title: 'Former vos employés : le maillon humain de la cybersécurité',
-    excerpt: '90% des violations de données commencent par un email. La formation des équipes reste le premier rempart contre les attaques. Découvrez les meilleures pratiques.',
-    category: 'Guide',
-    author: 'Emma Fontaine',
-    date: '8 février 2024',
-    readingTime: 9,
-    image: 'linear-gradient(135deg, #fbbf24/20, #34d399/20)',
-    tags: ['formation', 'sensibilisation', 'employés'],
+    slug: 'bec-business-email-compromise',
+    title: 'BEC (Business Email Compromise) : la menace que personne ne voit venir',
+    excerpt:
+      'La compromission d\'email professionnel — ou BEC — est l\'une des fraudes les plus coûteuses et les moins détectées. Elle ne repose ni sur des malwares ni sur des liens suspects : juste un email bien rédigé, au bon moment, au bon interlocuteur. Pourquoi est-elle si difficile à stopper, et que peut-on faire concrètement ?',
+    category: 'Analyse',
+    status: 'draft' as const,
+    readingTime: 8,
+    color: '#fb7185',
+    tags: ['BEC', 'fraude', 'ingénierie sociale'],
   },
 ]
 
-const categories = ['Tous', 'Phishing', 'Sécurité', 'Guide', 'Actualités', 'Technique']
-
-const categoryColors: Record<string, 'info' | 'critical' | 'success' | 'high' | 'medium' | 'default'> = {
-  Phishing: 'critical',
-  Technique: 'info',
-  Guide: 'success',
-  Actualités: 'high',
-  Sécurité: 'medium',
+const statusConfig = {
+  coming: {
+    label: 'À venir',
+    className: 'bg-[#a78bfa]/10 border-[#a78bfa]/30 text-[#a78bfa]',
+  },
+  draft: {
+    label: 'En cours de rédaction',
+    className: 'bg-[#41e8c4]/10 border-[#41e8c4]/30 text-[#41e8c4]',
+  },
 }
 
 export default function BlogPage() {
-  const [activeCategory, setActiveCategory] = useState('Tous')
-
-  const filtered = activeCategory === 'Tous' ? posts : posts.filter(p => p.category === activeCategory)
-
   return (
-    <div className="min-h-screen bg-[#060d18]">
+    <div className="min-h-screen bg-[#0d1117]">
       <Header />
       <main>
         {/* Hero */}
         <section className="pt-32 pb-16 px-4 text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#7dd3fc]/30 bg-[#7dd3fc]/10 text-[#7dd3fc] text-xs font-medium mb-6">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#41e8c4]/30 bg-[#41e8c4]/10 text-[#41e8c4] text-xs font-medium mb-6">
               Blog &amp; Ressources
             </span>
-            <h1 className="text-4xl md:text-5xl font-bold text-[#eaf2fb] mb-4" style={{ fontFamily: 'Syne, sans-serif' }}>
+            <h1
+              className="text-4xl md:text-5xl font-bold text-[#eaf2fb] mb-4"
+              style={{ fontFamily: 'Syne, sans-serif' }}
+            >
               Cybersécurité &amp;{' '}
-              <span style={{ background: 'linear-gradient(135deg, #7dd3fc, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              <span
+                style={{
+                  background: 'linear-gradient(135deg, #41e8c4, #a78bfa)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
                 Anti-Phishing
               </span>
             </h1>
             <p className="text-[#7a96b4] text-lg max-w-xl mx-auto">
-              Guides pratiques, analyses de menaces et actualités pour protéger votre organisation.
+              Des articles écrits par l&apos;équipe PhishGuard.IA — sans chiffres inventés, sans
+              buzzwords vides.
             </p>
           </motion.div>
         </section>
 
-        {/* Category filter */}
-        <section className="pb-8 px-4">
-          <div className="max-w-5xl mx-auto flex items-center gap-2 flex-wrap justify-center">
-            {categories.map(cat => (
-              <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all border ${
-                  activeCategory === cat
-                    ? 'bg-[#7dd3fc]/20 border-[#7dd3fc]/40 text-[#7dd3fc]'
-                    : 'border-[#1a2740] text-[#7a96b4] hover:border-[#7dd3fc]/30 hover:text-[#eaf2fb]'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
+        {/* Notice */}
+        <section className="pb-6 px-4">
+          <div className="max-w-3xl mx-auto">
+            <div className="rounded-xl border border-[#41e8c4]/20 bg-[#41e8c4]/5 px-5 py-4 flex gap-3 items-start">
+              <PenLine size={16} className="text-[#41e8c4] mt-0.5 shrink-0" />
+              <p className="text-sm text-[#7a96b4] leading-relaxed">
+                Notre blog est en cours de construction. Les articles ci-dessous sont nos prochaines
+                publications — le contenu complet arrive bientôt.
+              </p>
+            </div>
           </div>
         </section>
 
-        {/* Posts grid */}
+        {/* Posts list */}
         <section className="py-8 px-4 pb-24">
-          <div className="max-w-5xl mx-auto grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.map((post, i) => (
-              <motion.article
-                key={post.slug}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className="rounded-2xl border border-[#1a2740] bg-[#0c1526]/80 overflow-hidden hover:border-[#7dd3fc]/30 transition-colors group"
-              >
-                {/* Image placeholder */}
-                <div
-                  className="h-44 relative overflow-hidden"
-                  style={{ background: post.image.replace('/20', '/10') }}
+          <div className="max-w-3xl mx-auto space-y-6">
+            {posts.map((post, i) => {
+              const status = statusConfig[post.status]
+              return (
+                <motion.article
+                  key={post.slug}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.08 }}
+                  className="rounded-2xl border border-[#1a2740] bg-[#161c26] p-6 md:p-8"
                 >
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-12 h-12 rounded-xl border border-[#1a2740] bg-[#0c1526]/60 flex items-center justify-center">
-                      <Tag size={20} className="text-[#7dd3fc]" />
-                    </div>
+                  {/* Top row: category + status badge */}
+                  <div className="flex flex-wrap items-center gap-2 mb-4">
+                    <span
+                      className="text-xs font-semibold px-2.5 py-1 rounded-full border"
+                      style={{
+                        backgroundColor: `${post.color}15`,
+                        borderColor: `${post.color}30`,
+                        color: post.color,
+                      }}
+                    >
+                      {post.category}
+                    </span>
+                    <span
+                      className={`text-xs font-medium px-2.5 py-1 rounded-full border ${status.className}`}
+                    >
+                      {status.label}
+                    </span>
                   </div>
-                </div>
-                <div className="p-5">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Badge variant={categoryColors[post.category] ?? 'default'}>{post.category}</Badge>
-                  </div>
-                  <h2 className="text-base font-semibold text-[#eaf2fb] mb-2 leading-snug group-hover:text-[#7dd3fc] transition-colors line-clamp-2">
+
+                  {/* Title */}
+                  <h2
+                    className="text-xl font-bold text-[#eaf2fb] mb-3 leading-snug"
+                    style={{ fontFamily: 'Syne, sans-serif' }}
+                  >
                     {post.title}
                   </h2>
-                  <p className="text-sm text-[#7a96b4] line-clamp-3 mb-4">{post.excerpt}</p>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 text-xs text-[#7a96b4]">
-                      <span className="flex items-center gap-1">
-                        <Calendar size={12} />
-                        {post.date}
+
+                  {/* Excerpt */}
+                  <p className="text-sm text-[#7a96b4] leading-relaxed mb-5">{post.excerpt}</p>
+
+                  {/* Footer: meta + tags */}
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-4 text-xs text-[#7a96b4]">
+                      <span className="flex items-center gap-1.5">
+                        <Clock size={12} />~{post.readingTime} min de lecture
                       </span>
-                      <span className="flex items-center gap-1">
-                        <Clock size={12} />
-                        {post.readingTime} min
+                      <span className="flex items-center gap-1.5">
+                        <Calendar size={12} />
+                        Publication à venir
                       </span>
                     </div>
-                    <Link
-                      href={`/blog/${post.slug}`}
-                      className="text-[#7dd3fc] hover:text-[#7dd3fc]/80 transition-colors"
-                    >
-                      <ArrowRight size={16} />
-                    </Link>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {post.tags.map(tag => (
+                        <span
+                          key={tag}
+                          className="text-xs px-2 py-0.5 rounded-md bg-[#1a2740] text-[#7a96b4]"
+                        >
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </motion.article>
-            ))}
+                </motion.article>
+              )
+            })}
           </div>
         </section>
       </main>

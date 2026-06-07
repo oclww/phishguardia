@@ -1,300 +1,272 @@
 'use client'
-import { useState, type FormEvent } from 'react'
-import { MapPin, Phone, Mail, Clock, CheckCircle2, Loader2 } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { useState } from 'react'
+import Link from 'next/link'
+import { Mail, Send, CheckCircle2, ArrowLeft, MessageSquare, Building2, User } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
-import { useToast } from '@/contexts/ToastContext'
 
-const subjectOptions = [
-  { value: 'demo', label: 'Demande de démo' },
-  { value: 'support', label: 'Support technique' },
-  { value: 'tarifs', label: 'Questions tarifaires' },
-  { value: 'partenariat', label: 'Partenariat' },
-  { value: 'autre', label: 'Autre' },
-]
-
-const contactInfo = [
-  {
-    icon: MapPin,
-    color: '#7dd3fc',
-    label: 'Adresse',
-    lines: ['25 Rue de la Paix', '75008 Paris, France'],
-  },
-  {
-    icon: Phone,
-    color: '#a78bfa',
-    label: 'Téléphone',
-    lines: ['+33 1 23 45 67 89'],
-  },
-  {
-    icon: Mail,
-    color: '#34d399',
-    label: 'Email',
-    lines: ['contact@phishguard.ia'],
-  },
-  {
-    icon: Clock,
-    color: '#fbbf24',
-    label: 'Horaires',
-    lines: ['Lun — Ven', '9h — 18h'],
-  },
-]
-
-interface FormState {
-  nom: string
-  email: string
-  entreprise: string
-  sujet: string
-  message: string
+const C = {
+  bg: '#0d1117', panel: '#161c26', panel2: '#10161e',
+  line: '#1e2a3a', line2: '#253347',
+  muted: '#374f67', subtle: '#4d6580', sec: '#7a96b0', pri: '#c8d8e8', bright: '#eaf2ff',
+  cyan: '#41e8c4', violet: '#a78bfa', blue: '#5e9ef7',
+  green: '#32d583', red: '#ff5f6d', amber: '#f5a623',
 }
 
-const emptyForm: FormState = {
-  nom: '',
-  email: '',
-  entreprise: '',
-  sujet: '',
-  message: '',
+const inputStyle = {
+  width: '100%',
+  padding: '12px 14px',
+  background: C.panel2,
+  border: `1px solid ${C.line2}`,
+  borderRadius: 10,
+  color: C.bright,
+  fontSize: 14,
+  outline: 'none',
+  fontFamily: 'Inter, system-ui, sans-serif',
+  transition: 'border-color .15s',
+  boxSizing: 'border-box' as const,
 }
 
 export default function ContactPage() {
-  const { addToast } = useToast()
-  const [form, setForm] = useState<FormState>(emptyForm)
-  const [loading, setLoading] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
+  const [form, setForm] = useState({ name: '', email: '', company: '', subject: '', message: '' })
+  const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle')
+  const [focused, setFocused] = useState<string | null>(null)
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
-    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
-  }
+  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
+    setForm(f => ({ ...f, [k]: e.target.value }))
 
-  async function handleSubmit(e: FormEvent) {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    setLoading(false)
-    setSubmitted(true)
-    addToast('success', 'Message envoyé !', 'Notre équipe vous répondra sous 24h.')
+    setStatus('sending')
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      if (res.ok) {
+        setStatus('success')
+      } else {
+        setStatus('error')
+      }
+    } catch {
+      setStatus('error')
+    }
   }
 
-  const inputClass =
-    'w-full bg-[#060d18] border border-[#1a2740] rounded-xl px-4 py-3 text-sm text-[#eaf2fb] placeholder-[#7a96b4] focus:outline-none focus:border-[#7dd3fc]/50 focus:ring-1 focus:ring-[#7dd3fc]/20 transition-all'
+  const getFocusBorder = (field: string) =>
+    focused === field ? `1px solid ${C.cyan}` : `1px solid ${C.line2}`
 
   return (
-    <div className="min-h-screen bg-[#060d18]">
+    <div style={{ background: C.bg, minHeight: '100vh' }}>
       <Header />
-      <main>
-        {/* Hero */}
-        <section className="pt-32 pb-16 px-4 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#7dd3fc]/30 bg-[#7dd3fc]/10 text-[#7dd3fc] text-xs font-medium mb-6">
-              Nous sommes là pour vous
-            </span>
-            <h1
-              className="text-4xl md:text-5xl font-bold text-[#eaf2fb] mb-4"
-              style={{ fontFamily: 'Syne, sans-serif' }}
-            >
-              Contactez-nous
-            </h1>
-            <p className="text-[#7a96b4] text-lg max-w-xl mx-auto">
-              Une question, une démo ou un projet ? Notre équipe vous répond sous 24h.
-            </p>
-          </motion.div>
-        </section>
 
-        {/* Two-column layout */}
-        <section className="pb-24 px-4">
-          <div className="max-w-5xl mx-auto grid md:grid-cols-5 gap-8 items-start">
-            {/* Form — wider column */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="md:col-span-3 rounded-2xl border border-[#1a2740] bg-[#0c1526] p-8"
-            >
-              {submitted ? (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.4 }}
-                  className="flex flex-col items-center justify-center py-16 text-center"
-                >
-                  <div className="w-16 h-16 rounded-full bg-[#34d399]/15 border border-[#34d399]/30 flex items-center justify-center mb-6">
-                    <CheckCircle2 size={32} className="text-[#34d399]" />
+      <section style={{ padding: '100px 24px 80px' }}>
+        <div style={{ maxWidth: 1000, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 48, alignItems: 'start' }}>
+
+          {/* Left — info */}
+          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: .6 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '5px 14px', borderRadius: 6, border: `1px solid ${C.line2}`, background: C.panel, marginBottom: 28 }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: C.cyan, letterSpacing: '.08em' }}>CONTACTEZ-NOUS</span>
+            </div>
+
+            <h1 style={{ fontFamily: 'Syne, sans-serif', fontSize: 'clamp(30px, 5vw, 48px)', fontWeight: 900, color: C.bright, letterSpacing: '-.03em', marginBottom: 16, lineHeight: 1 }}>
+              On vous répond<br/>
+              <span style={{ color: C.cyan }}>rapidement.</span>
+            </h1>
+
+            <p style={{ fontSize: 15, color: C.sec, lineHeight: 1.8, marginBottom: 40 }}>
+              Une question sur l&apos;API, un problème technique, une demande de démo ou simplement envie de discuter du projet — on lit tous les messages.
+            </p>
+
+            {/* Direct email */}
+            <div style={{ padding: '20px 22px', background: C.panel, border: `1px solid ${C.line}`, borderRadius: 14, marginBottom: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                <div style={{ width: 38, height: 38, borderRadius: 10, background: `${C.cyan}12`, border: `1px solid ${C.cyan}20`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Mail size={17} style={{ color: C.cyan }}/>
+                </div>
+                <div>
+                  <p style={{ fontSize: 11, fontWeight: 600, color: C.muted, letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 2 }}>Email direct</p>
+                  <a href="mailto:oclaw78@gmail.com" style={{ fontSize: 14, fontWeight: 600, color: C.bright, textDecoration: 'none' }}>
+                    oclaw78@gmail.com
+                  </a>
+                </div>
+              </div>
+              <p style={{ fontSize: 12, color: C.subtle, marginLeft: 50 }}>On répond en général dans les 24h.</p>
+            </div>
+
+            {/* Who we are */}
+            <div style={{ padding: '16px 20px', background: C.panel, border: `1px solid ${C.line}`, borderRadius: 14 }}>
+              <p style={{ fontSize: 12, color: C.subtle, lineHeight: 1.7 }}>
+                💬 Vous parlerez directement à <strong style={{ color: C.pri }}>Matis, Sami ou Lucas</strong> — les créateurs du produit. Pas de support externalisé.
+              </p>
+            </div>
+          </motion.div>
+
+          {/* Right — form */}
+          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: .6, delay: .1 }}>
+            <AnimatePresence mode="wait">
+              {status === 'success' ? (
+                <motion.div key="success"
+                  initial={{ opacity: 0, scale: .95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
+                  style={{ padding: '48px 32px', background: C.panel, border: `1px solid ${C.line}`, borderRadius: 16, textAlign: 'center' }}>
+                  <div style={{ width: 60, height: 60, borderRadius: '50%', background: `${C.green}12`, border: `1px solid ${C.green}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+                    <CheckCircle2 size={28} style={{ color: C.green }}/>
                   </div>
-                  <h2 className="text-xl font-bold text-[#eaf2fb] mb-3" style={{ fontFamily: 'Syne, sans-serif' }}>
+                  <h2 style={{ fontFamily: 'Syne, sans-serif', fontSize: 22, fontWeight: 800, color: C.bright, marginBottom: 10 }}>
                     Message envoyé !
                   </h2>
-                  <p className="text-[#7a96b4] max-w-xs leading-relaxed mb-8">
-                    Merci de nous avoir contactés. Notre équipe reviendra vers vous dans les 24 heures ouvrées.
+                  <p style={{ fontSize: 14, color: C.sec, lineHeight: 1.7, marginBottom: 28 }}>
+                    On a bien reçu votre message. On vous répond dès que possible, généralement dans les 24h.
                   </p>
-                  <button
-                    onClick={() => { setSubmitted(false); setForm(emptyForm) }}
-                    className="px-6 py-2.5 rounded-xl border border-[#1a2740] text-sm text-[#eaf2fb] hover:border-[#7dd3fc]/40 hover:bg-[#7dd3fc]/5 transition-all"
-                  >
-                    Envoyer un autre message
-                  </button>
+                  <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+                    <button onClick={() => { setStatus('idle'); setForm({ name: '', email: '', company: '', subject: '', message: '' }) }}
+                      style={{ padding: '10px 20px', background: 'transparent', color: C.sec, fontSize: 13, borderRadius: 8, border: `1px solid ${C.line2}`, cursor: 'pointer' }}>
+                      Nouveau message
+                    </button>
+                    <Link href="/register">
+                      <button className="px-5 py-2.5 bg-[#eaf2fb] text-[#060d18] font-bold text-sm rounded-lg cursor-pointer hover:bg-white transition-all">
+                        Créer un compte
+                      </button>
+                    </Link>
+                  </div>
                 </motion.div>
               ) : (
-                <>
-                  <h2 className="text-lg font-bold text-[#eaf2fb] mb-6" style={{ fontFamily: 'Syne, sans-serif' }}>
-                    Envoyez-nous un message
-                  </h2>
-                  <form onSubmit={handleSubmit} className="space-y-5">
-                    <div className="grid sm:grid-cols-2 gap-5">
-                      <div>
-                        <label className="block text-xs font-medium text-[#7a96b4] mb-1.5">
-                          Nom complet <span className="text-[#fb7185]">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          name="nom"
-                          required
-                          value={form.nom}
-                          onChange={handleChange}
-                          placeholder="Jean Dupont"
-                          className={inputClass}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-[#7a96b4] mb-1.5">
-                          Email <span className="text-[#fb7185]">*</span>
-                        </label>
-                        <input
-                          type="email"
-                          name="email"
-                          required
-                          value={form.email}
-                          onChange={handleChange}
-                          placeholder="jean@entreprise.com"
-                          className={inputClass}
-                        />
-                      </div>
-                    </div>
+                <motion.form key="form" onSubmit={handleSubmit}
+                  style={{ padding: '32px', background: C.panel, border: `1px solid ${C.line}`, borderRadius: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
 
+                  {/* Name + Email */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                     <div>
-                      <label className="block text-xs font-medium text-[#7a96b4] mb-1.5">
-                        Entreprise
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: C.muted, letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 7 }}>
+                        <User size={10}/> Prénom *
                       </label>
                       <input
-                        type="text"
-                        name="entreprise"
-                        value={form.entreprise}
-                        onChange={handleChange}
-                        placeholder="Acme Corp"
-                        className={inputClass}
+                        required
+                        value={form.name}
+                        onChange={set('name')}
+                        onFocus={() => setFocused('name')}
+                        onBlur={() => setFocused(null)}
+                        placeholder="Matis"
+                        style={{ ...inputStyle, border: getFocusBorder('name') }}
                       />
                     </div>
-
                     <div>
-                      <label className="block text-xs font-medium text-[#7a96b4] mb-1.5">
-                        Sujet <span className="text-[#fb7185]">*</span>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: C.muted, letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 7 }}>
+                        <Mail size={10}/> Email *
                       </label>
-                      <select
-                        name="sujet"
-                        required
-                        value={form.sujet}
-                        onChange={handleChange}
-                        className={`${inputClass} appearance-none cursor-pointer`}
-                      >
-                        <option value="" disabled>Sélectionnez un sujet</option>
-                        {subjectOptions.map(opt => (
-                          <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-medium text-[#7a96b4] mb-1.5">
-                        Message <span className="text-[#fb7185]">*</span>
-                      </label>
-                      <textarea
-                        name="message"
-                        required
-                        rows={5}
-                        value={form.message}
-                        onChange={handleChange}
-                        placeholder="Décrivez votre besoin ou votre question..."
-                        className={`${inputClass} resize-none`}
+                      <input
+                        required type="email"
+                        value={form.email}
+                        onChange={set('email')}
+                        onFocus={() => setFocused('email')}
+                        onBlur={() => setFocused(null)}
+                        placeholder="vous@entreprise.com"
+                        style={{ ...inputStyle, border: getFocusBorder('email') }}
                       />
                     </div>
+                  </div>
 
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="w-full py-3.5 bg-gradient-to-r from-[#7dd3fc] to-[#a78bfa] text-[#060d18] font-semibold rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-[#7dd3fc]/20 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    >
-                      {loading ? (
-                        <>
-                          <Loader2 size={16} className="animate-spin" />
-                          Envoi en cours…
-                        </>
-                      ) : (
-                        'Envoyer le message →'
-                      )}
-                    </button>
-                  </form>
-                </>
+                  {/* Company */}
+                  <div>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: C.muted, letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 7 }}>
+                      <Building2 size={10}/> Entreprise
+                    </label>
+                    <input
+                      value={form.company}
+                      onChange={set('company')}
+                      onFocus={() => setFocused('company')}
+                      onBlur={() => setFocused(null)}
+                      placeholder="Nom de votre entreprise (optionnel)"
+                      style={{ ...inputStyle, border: getFocusBorder('company') }}
+                    />
+                  </div>
+
+                  {/* Subject */}
+                  <div>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: C.muted, letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 7 }}>
+                      <MessageSquare size={10}/> Sujet *
+                    </label>
+                    <select
+                      required
+                      value={form.subject}
+                      onChange={set('subject')}
+                      onFocus={() => setFocused('subject')}
+                      onBlur={() => setFocused(null)}
+                      style={{ ...inputStyle, border: getFocusBorder('subject'), appearance: 'none', cursor: 'pointer' }}>
+                      <option value="">Choisir un sujet...</option>
+                      <option value="demo">Demande de démo</option>
+                      <option value="api">Question sur l&apos;API</option>
+                      <option value="pricing">Tarifs & plans</option>
+                      <option value="bug">Signaler un problème</option>
+                      <option value="partnership">Partenariat</option>
+                      <option value="other">Autre</option>
+                    </select>
+                  </div>
+
+                  {/* Message */}
+                  <div>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: C.muted, letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 7 }}>
+                      Message *
+                    </label>
+                    <textarea
+                      required
+                      value={form.message}
+                      onChange={set('message')}
+                      onFocus={() => setFocused('message')}
+                      onBlur={() => setFocused(null)}
+                      placeholder="Décrivez votre besoin, votre question ou votre idée..."
+                      rows={5}
+                      style={{ ...inputStyle, border: getFocusBorder('message'), resize: 'vertical', minHeight: 120 }}
+                    />
+                  </div>
+
+                  {/* Error */}
+                  {status === 'error' && (
+                    <div style={{ padding: '10px 14px', background: `${C.red}10`, border: `1px solid ${C.red}20`, borderRadius: 8 }}>
+                      <p style={{ fontSize: 12, color: C.red }}>
+                        Une erreur s&apos;est produite. Envoyez-nous directement un email à{' '}
+                        <a href="mailto:oclaw78@gmail.com" style={{ color: C.cyan, fontWeight: 600 }}>oclaw78@gmail.com</a>
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Submit */}
+                  <button
+                    type="submit"
+                    disabled={status === 'sending'}
+                    className="w-full flex items-center justify-center gap-2 py-3 font-bold text-sm rounded-xl cursor-pointer transition-all duration-300 disabled:opacity-60"
+                    style={{ background: status === 'sending' ? C.panel2 : '#eaf2fb', color: '#060d18', border: 'none' }}>
+                    {status === 'sending' ? (
+                      <>
+                        <div style={{ width: 14, height: 14, borderRadius: '50%', border: `2px solid ${C.muted}`, borderTopColor: C.cyan, animation: 'spin 0.8s linear infinite' }}/>
+                        Envoi en cours...
+                      </>
+                    ) : (
+                      <><Send size={14}/> Envoyer le message</>
+                    )}
+                  </button>
+
+                  <p style={{ fontSize: 11, color: C.muted, textAlign: 'center' }}>
+                    Ou directement par email :{' '}
+                    <a href="mailto:oclaw78@gmail.com" style={{ color: C.cyan, textDecoration: 'none', fontWeight: 600 }}>oclaw78@gmail.com</a>
+                  </p>
+                </motion.form>
               )}
-            </motion.div>
+            </AnimatePresence>
+          </motion.div>
+        </div>
+      </section>
 
-            {/* Contact info — narrower column */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="md:col-span-2 space-y-4"
-            >
-              {contactInfo.map((info, i) => {
-                const Icon = info.icon
-                return (
-                  <motion.div
-                    key={info.label}
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 + i * 0.08, duration: 0.4 }}
-                    className="rounded-2xl border border-[#1a2740] bg-[#0c1526] p-5 flex gap-4 items-start"
-                  >
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                      style={{ backgroundColor: `${info.color}15`, border: `1px solid ${info.color}30` }}
-                    >
-                      <Icon size={17} style={{ color: info.color }} />
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-[#7a96b4] mb-1">{info.label}</p>
-                      {info.lines.map(line => (
-                        <p key={line} className="text-sm text-[#eaf2fb] font-medium">{line}</p>
-                      ))}
-                    </div>
-                  </motion.div>
-                )
-              })}
-
-              {/* Response SLA badge */}
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.56, duration: 0.4 }}
-                className="rounded-2xl border border-[#34d399]/20 bg-[#34d399]/5 p-5"
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-2 h-2 rounded-full bg-[#34d399] animate-pulse" />
-                  <span className="text-sm font-semibold text-[#34d399]">Temps de réponse garanti</span>
-                </div>
-                <p className="text-xs text-[#7a96b4] leading-relaxed">
-                  Notre équipe s&apos;engage à répondre à toutes les demandes dans les 24 heures ouvrées.
-                  Pour les urgences, appelez directement notre ligne de support.
-                </p>
-              </motion.div>
-            </motion.div>
-          </div>
-        </section>
-      </main>
       <Footer />
+
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        input::placeholder, textarea::placeholder { color: #374f67; }
+        input:focus, textarea:focus, select:focus { outline: none; }
+        select option { background: #161c26; color: #eaf2ff; }
+      `}</style>
     </div>
   )
 }
