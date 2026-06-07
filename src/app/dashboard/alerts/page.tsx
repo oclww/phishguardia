@@ -79,7 +79,7 @@ export default function AlertsPage() {
       <Card>
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-base font-semibold text-[#eaf2fb]">Flux d'alertes en temps réel</h2>
-          <Badge variant="outline" className="border-[#fb7185]/30 text-[#fb7185]">
+          <Badge variant="default" className="border-[#fb7185]/30 text-[#fb7185]">
             {alerts.length} menace{alerts.length > 1 ? 's' : ''} interceptée{alerts.length > 1 ? 's' : ''}
           </Badge>
         </div>
@@ -163,7 +163,7 @@ export default function AlertsPage() {
                         </svg>
                       </div>
                     </div>
-                    <Badge variant={alert.status === 'blocked' ? 'danger' : 'info'} className="text-[10px] w-full text-center justify-center">
+                    <Badge variant={alert.status === 'blocked' ? 'critical' : 'info'} className="text-[10px] w-full text-center justify-center">
                       {alert.status === 'blocked' ? 'Bloqué' : 'Quarantaine'}
                     </Badge>
                   </div>

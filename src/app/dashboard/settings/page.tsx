@@ -359,7 +359,7 @@ export default function SettingsPage() {
             {isOAuthUser ? (
               <div className="p-4 bg-[rgba(65,232,196,.05)] border border-[rgba(65,232,196,.2)] rounded-xl text-sm mb-2 text-[#eaf2fb]">
                 <p className="font-semibold mb-1">🔐 Connecté via un service tiers</p>
-                <p className="text-[#7a96b4] text-xs">La sécurité de votre authentification est déléguée à {user?.app_metadata?.provider || 'Google'}. Vous ne pouvez pas modifier votre mot de passe depuis cette interface.</p>
+                <p className="text-[#7a96b4] text-xs">La sécurité de votre authentification est déléguée à {(user as any)?.app_metadata?.provider || 'Google'}. Vous ne pouvez pas modifier votre mot de passe depuis cette interface.</p>
               </div>
             ) : (
             <div className="space-y-4 max-w-md">

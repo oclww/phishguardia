@@ -44,13 +44,14 @@ export async function POST(request: Request) {
         // Retrieve and save the subscription directly preventing race conditions
         if (session.subscription) {
           const subscription = await stripe.subscriptions.retrieve(session.subscription as string)
+          const sub = subscription as any
           await supabaseAdmin.from('subscriptions').upsert({
             id: subscription.id,
             user_id: userId,
             status: subscription.status,
             plan_id: subscription.items.data[0].price.id,
-            current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+            current_period_start: new Date((sub.current_period_start ?? sub.items?.data?.[0]?.current_period_start ?? 0) * 1000).toISOString(),
+            current_period_end: new Date((sub.current_period_end ?? sub.items?.data?.[0]?.current_period_end ?? 0) * 1000).toISOString(),
             cancel_at_period_end: subscription.cancel_at_period_end,
             updated_at: new Date().toISOString()
           })
@@ -73,13 +74,14 @@ export async function POST(request: Request) {
         .single()
 
       if (customerData) {
+        const sub = subscription as any
         await supabaseAdmin.from('subscriptions').upsert({
           id: subscription.id,
           user_id: customerData.user_id,
           status: subscription.status,
           plan_id: subscription.items.data[0].price.id,
-          current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-          current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+          current_period_start: new Date((sub.current_period_start ?? sub.items?.data?.[0]?.current_period_start ?? 0) * 1000).toISOString(),
+          current_period_end: new Date((sub.current_period_end ?? sub.items?.data?.[0]?.current_period_end ?? 0) * 1000).toISOString(),
           cancel_at_period_end: subscription.cancel_at_period_end,
           updated_at: new Date().toISOString()
         })

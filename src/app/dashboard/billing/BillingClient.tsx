@@ -155,7 +155,7 @@ export default function BillingClient({ initialSubscription, activePlanId, isYea
                 </p>
               </div>
             </div>
-            <Badge variant={activePlanId ? "success" : "warning"}>{activePlanId ? "Actif" : "Libre"}</Badge>
+            <Badge variant={activePlanId ? "success" : "high"}>{activePlanId ? "Actif" : "Libre"}</Badge>
           </div>
 
           <div className="flex items-center gap-2 text-sm text-[#7a96b4]">
