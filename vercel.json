@@ -2,11 +2,5 @@
   "framework": "nextjs",
   "buildCommand": "next build",
   "devCommand": "next dev",
-  "installCommand": "npm install",
-  "crons": [
-    {
-      "path": "/api/v1/mail/sync",
-      "schedule": "*/2 * * * *"
-    }
-  ]
+  "installCommand": "npm install"
 }
