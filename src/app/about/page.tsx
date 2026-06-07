@@ -51,11 +51,11 @@ export default function AboutPage() {
             <span style={{ fontSize: 11, fontWeight: 600, color: C.cyan, letterSpacing: '.08em' }}>QUI SOMMES-NOUS</span>
           </div>
           <h1 style={{ fontFamily: 'Syne, sans-serif', fontSize: 'clamp(36px, 6vw, 64px)', fontWeight: 900, color: C.bright, letterSpacing: '-.04em', marginBottom: 20, lineHeight: .95 }}>
-            Trois étudiants.<br/>
-            <span style={{ color: C.cyan }}>Un vrai projet.</span>
+            On a vu un problème.<br/>
+            <span style={{ color: C.cyan }}>On a construit la solution.</span>
           </h1>
           <p style={{ fontSize: 17, color: C.sec, lineHeight: 1.8, maxWidth: 580, margin: '0 auto 0' }}>
-            PhishGuard.IA n&apos;est pas né dans une grande entreprise. C&apos;est né d&apos;une conviction : les PME méritent les mêmes outils de cybersécurité que les grands groupes.
+            Des milliers d&apos;entreprises se font piéger par des emails de phishing chaque jour. Les outils qui existent sont soit hors de prix, soit impossibles à intégrer. On a décidé de faire autrement.
           </p>
         </motion.div>
       </section>
