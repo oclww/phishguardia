@@ -19,7 +19,7 @@ type Gateway = 'postfix' | 'exchange' | 'google_workspace' | 'microsoft365' | 'p
 
 // ─── Code examples ────────────────────────────────────────────────────────────
 const analyzeExamples: Record<Lang, string> = {
-  curl: `curl -X POST https://phishguard.ia/api/v1/analyze \\
+  curl: `curl -X POST https://phishguardia.vercel.app/api/v1/analyze \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -31,7 +31,7 @@ const analyzeExamples: Record<Lang, string> = {
   python: `import requests
 
 PHISHGUARD_API_KEY = "YOUR_API_KEY"
-BASE_URL = "https://phishguard.ia/api/v1"
+BASE_URL = "https://phishguardia.vercel.app/api/v1"
 
 def scan_email(from_addr: str, subject: str, body: str = "") -> dict:
     response = requests.post(
@@ -61,7 +61,7 @@ print(f"Sévérité : {result['severity']}")      # low | medium | high | critic
   javascript: `const PHISHGUARD_API_KEY = process.env.PHISHGUARD_API_KEY;
 
 async function scanEmail({ from, subject, body = "" }) {
-  const response = await fetch("https://phishguard.ia/api/v1/analyze", {
+  const response = await fetch("https://phishguardia.vercel.app/api/v1/analyze", {
     method: "POST",
     headers: {
       "Authorization": \`Bearer \${PHISHGUARD_API_KEY}\`,
@@ -90,7 +90,7 @@ app.post("/incoming-email", async (req, res) => {
 
   php: `<?php
 define('PHISHGUARD_API_KEY', getenv('PHISHGUARD_API_KEY'));
-define('PHISHGUARD_BASE_URL', 'https://phishguard.ia/api/v1');
+define('PHISHGUARD_BASE_URL', 'https://phishguardia.vercel.app/api/v1');
 
 function scanEmail(string $from, string $subject, string $body = ''): array {
     $ch = curl_init(PHISHGUARD_BASE_URL . '/analyze');
@@ -155,7 +155,7 @@ func ScanEmail(req ScanRequest) (*ScanResult, error) {
     body, _ := json.Marshal(req)
     
     httpReq, _ := http.NewRequest("POST", 
-        "https://phishguard.ia/api/v1/analyze", 
+        "https://phishguardia.vercel.app/api/v1/analyze", 
         bytes.NewBuffer(body))
     
     httpReq.Header.Set("Authorization", "Bearer "+os.Getenv("PHISHGUARD_API_KEY"))
@@ -193,7 +193,7 @@ FROM=$(cat /tmp/mail_from)
 SUBJECT=$(grep -i "^Subject:" /tmp/mail_headers | head -1 | cut -d: -f2-)
 BODY=$(cat /tmp/mail_body | head -c 2000)
 
-RESULT=$(curl -s -X POST https://phishguard.ia/api/v1/analyze \\
+RESULT=$(curl -s -X POST https://phishguardia.vercel.app/api/v1/analyze \\
   -H "Authorization: Bearer $PHISHGUARD_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d "{\\"from\\":\\"$FROM\\",\\"subject\\":\\"$SUBJECT\\",\\"body\\":\\"$BODY\\"}")
@@ -228,7 +228,7 @@ function Invoke-PhishGuardScan {
     } | ConvertTo-Json
 
     $response = Invoke-RestMethod \\
-        -Uri "https://phishguard.ia/api/v1/analyze" \\
+        -Uri "https://phishguardia.vercel.app/api/v1/analyze" \\
         -Method POST \\
         -Headers @{ Authorization = "Bearer $env:PHISHGUARD_API_KEY" } \\
         -ContentType "application/json" \\
@@ -259,7 +259,7 @@ foreach ($msg in $messages) {
 
 const subscription = await graphClient.api('/subscriptions').post({
   changeType: 'created',
-  notificationUrl: 'https://phishguard.ia/api/v1/webhooks/m365',
+  notificationUrl: 'https://phishguardia.vercel.app/api/v1/webhooks/m365',
   resource: '/users/ALL/mailFolders/Inbox/messages',
   expirationDateTime: new Date(Date.now() + 3600000 * 24 * 3).toISOString(),
   clientState: process.env.PHISHGUARD_WEBHOOK_SECRET,
@@ -278,7 +278,7 @@ export async function POST(req: Request) {
       .get();
 
     // Scanner avec PhishGuard
-    const result = await fetch('https://phishguard.ia/api/v1/analyze', {
+    const result = await fetch('https://phishguardia.vercel.app/api/v1/analyze', {
       method: 'POST',
       headers: { 'Authorization': \`Bearer \${process.env.PHISHGUARD_API_KEY}\` },
       body: JSON.stringify({
@@ -336,7 +336,7 @@ def scan_and_quarantine(user_email: str, message_id: str):
     
     # Scanner avec PhishGuard
     result = requests.post(
-        'https://phishguard.ia/api/v1/analyze',
+        'https://phishguardia.vercel.app/api/v1/analyze',
         headers={'Authorization': f'Bearer {PHISHGUARD_API_KEY}'},
         json={
             'from': headers.get('From', ''),
@@ -365,7 +365,7 @@ def scan_and_quarantine(user_email: str, message_id: str):
   "name": "PhishGuard.IA Integration",
   "type": "webhook",
   "config": {
-    "url": "https://phishguard.ia/api/v1/analyze",
+    "url": "https://phishguardia.vercel.app/api/v1/analyze",
     "method": "POST",
     "headers": {
       "Authorization": "Bearer YOUR_API_KEY",
@@ -425,7 +425,7 @@ def scan_and_quarantine(user_email: str, message_id: str):
       "name": "Scanner avec PhishGuard",
       "parameters": {
         "method": "POST",
-        "url": "https://phishguard.ia/api/v1/analyze",
+        "url": "https://phishguardia.vercel.app/api/v1/analyze",
         "headers": {
           "Authorization": "Bearer YOUR_API_KEY"
         },

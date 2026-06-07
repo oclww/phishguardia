@@ -102,19 +102,21 @@ const curlSnippet = `curl -X POST https://phishguardia.vercel.app/api/v1/analyze
   -d '{
     "from": "security@micros0ft-alert.com",
     "subject": "Action immédiate requise",
-    "body_text": "Votre compte sera suspendu..."
+    "body": "Votre compte sera suspendu dans 24h..."
   }'`
 
 const curlResponse = `{
-  "score": 94,
-  "status": "malicious",
-  "risk_level": "critical",
-  "signals": [
-    "domain_spoofing",
-    "urgency_manipulation",
-    "masked_redirect_url"
-  ],
-  "analysis_ms": 187
+  "success": true,
+  "ai_score": 91,
+  "status": "blocked",
+  "severity": "critical",
+  "threat_type": "spear-phishing",
+  "explanation": "Domaine imitant Microsoft avec typosquat. Lien vers page de collecte d'identifiants.",
+  "findings": [
+    "Microsoft typosquat",
+    "Urgency trigger words",
+    "Credential harvesting path"
+  ]
 }`
 
 export default function LandingPage() {
