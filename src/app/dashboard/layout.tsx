@@ -40,7 +40,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <Sidebar/>
       <div className="flex flex-col flex-1 overflow-hidden">
         <DashboardHeader/>
-        <main className="flex-1 overflow-y-auto p-6">
+        {/* pt-14 = top bar height on mobile, pb-16 = bottom tab bar height on mobile */}
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 pt-[calc(56px+1rem)] md:pt-6 pb-[calc(64px+1rem)] md:pb-6">
           {children}
         </main>
       </div>
