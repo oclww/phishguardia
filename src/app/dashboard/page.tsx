@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis,
@@ -117,6 +117,40 @@ export default function DashboardPage() {
     
     setIsLoading(false)
   }
+
+  // ─── Supabase Realtime ────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!user) return
+
+    const channel = supabase
+      .channel(`dashboard-${user.id}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'emails',
+        filter: `user_id=eq.${user.id}`,
+      }, () => {
+        // Increment email count
+        setStats(prev => ({ ...prev, emails: prev.emails + 1 }))
+      })
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'threats',
+        filter: `user_id=eq.${user.id}`,
+      }, (payload) => {
+        // Add new threat to list and update counts
+        setThreats(prev => [payload.new, ...prev].slice(0, 6))
+        setStats(prev => ({
+          ...prev,
+          threats: prev.threats + 1,
+          blocks: payload.new.status === 'blocked' ? prev.blocks + 1 : prev.blocks,
+        }))
+      })
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [user])
 
   // Dynamic KPIs override
   const dynamicKpis = [

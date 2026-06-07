@@ -57,9 +57,14 @@ export default function RegisterPage() {
     if (!cguAccepted) { setError('Vous devez accepter les CGU.'); return }
     setError('')
     setIsLoading(true)
-    const success = await register(form)
-    if (success) router.push('/dashboard')
-    else { setError('Une erreur est survenue.'); setIsLoading(false) }
+    try {
+      const success = await register(form)
+      if (success) router.push('/dashboard')
+      else { setError('Une erreur est survenue. Réessayez.'); setIsLoading(false) }
+    } catch (err: any) {
+      setError(err.message || 'Une erreur est survenue. Réessayez.')
+      setIsLoading(false)
+    }
   }
 
   async function handleOAuth(provider: any) {

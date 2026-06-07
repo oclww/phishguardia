@@ -111,7 +111,7 @@ export default function LoginPage() {
                 required
               />
               <div className="mt-1.5 text-right">
-                <Link href="#" className="text-xs text-[#7dd3fc] hover:underline">
+                <Link href="/auth/reset-password" className="text-xs text-[#7dd3fc] hover:underline">
                   Mot de passe oublié ?
                 </Link>
               </div>

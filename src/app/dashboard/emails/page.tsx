@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import {
   Search,
@@ -13,6 +13,8 @@ import {
   CheckCircle,
   Archive,
   Flag,
+  Loader2,
+  InboxIcon,
 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -20,13 +22,28 @@ import { Badge } from '@/components/ui/Badge'
 import { Avatar } from '@/components/ui/Avatar'
 import { Modal } from '@/components/ui/Modal'
 import { useToast } from '@/contexts/ToastContext'
-import { mockEmails } from '@/data/mockData'
+import { useAuth } from '@/contexts/AuthContext'
+import { createClient } from '@/lib/supabase/client'
 import { formatDateTime, getScoreColor } from '@/lib/utils'
-import type { Email } from '@/types'
 
-const PAGE_SIZE = 5
+const PAGE_SIZE = 10
+
+// ─── Types ──────────────────────────────────────────────────────────────────
+
+interface SupabaseEmail {
+  id: string
+  from_email: string
+  subject: string
+  status: 'safe' | 'malicious'
+  ai_score: number
+  threat_type: string | null
+  created_at: string
+  user_id: string
+}
 
 type TabStatus = 'all' | 'safe' | 'suspicious' | 'malicious'
+
+// ─── Tab config ──────────────────────────────────────────────────────────────
 
 const tabConfig: { key: TabStatus; label: string; icon: React.ElementType; color: string }[] = [
   { key: 'all', label: 'Tous', icon: Mail, color: '#7dd3fc' },
@@ -35,11 +52,25 @@ const tabConfig: { key: TabStatus; label: string; icon: React.ElementType; color
   { key: 'malicious', label: 'Malveillants', icon: ShieldX, color: '#fb7185' },
 ]
 
-function StatusBadge({ status }: { status: Email['status'] }) {
-  const map = {
-    safe: { variant: 'success' as const, label: 'Sûr' },
-    suspicious: { variant: 'high' as const, label: 'Suspect' },
-    malicious: { variant: 'critical' as const, label: 'Malveillant' },
+// ─── Helper: derive display status from DB row ────────────────────────────────
+// suspicious → status=malicious AND 45 <= ai_score < 75
+// malicious  → status=malicious AND ai_score >= 75
+
+function deriveDisplayStatus(email: SupabaseEmail): TabStatus {
+  if (email.status === 'safe') return 'safe'
+  if (email.ai_score >= 75) return 'malicious'
+  if (email.ai_score >= 45) return 'suspicious'
+  return 'safe'
+}
+
+// ─── UI Components ───────────────────────────────────────────────────────────
+
+function StatusBadge({ status }: { status: TabStatus }) {
+  const map: Record<TabStatus, { variant: 'success' | 'high' | 'critical' | 'default'; label: string }> = {
+    all: { variant: 'default', label: 'Inconnu' },
+    safe: { variant: 'success', label: 'Sûr' },
+    suspicious: { variant: 'high', label: 'Suspect' },
+    malicious: { variant: 'critical', label: 'Malveillant' },
   }
   const { variant, label } = map[status]
   return <Badge variant={variant}>{label}</Badge>
@@ -95,41 +126,110 @@ function AIScoreGauge({ score }: { score: number }) {
   )
 }
 
+// ─── Page ────────────────────────────────────────────────────────────────────
+
 export default function EmailsPage() {
   const { addToast } = useToast()
+  const { user } = useAuth()
+  const supabase = createClient()
+
+  const [emails, setEmails] = useState<SupabaseEmail[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
   const [search, setSearch] = useState('')
   const [activeTab, setActiveTab] = useState<TabStatus>('all')
   const [severityFilter, setSeverityFilter] = useState('all')
   const [page, setPage] = useState(1)
-  const [selectedEmail, setSelectedEmail] = useState<Email | null>(null)
+  const [selectedEmail, setSelectedEmail] = useState<SupabaseEmail | null>(null)
 
+  // keep a stable ref to user.id for the realtime subscription
+  const userIdRef = useRef<string | undefined>(user?.id)
+  useEffect(() => { userIdRef.current = user?.id }, [user?.id])
+
+  // ── Fetch emails ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!user?.id) return
+
+    async function fetchEmails() {
+      setIsLoading(true)
+      const { data, error } = await supabase
+        .from('emails')
+        .select('id, from_email, subject, status, ai_score, threat_type, created_at, user_id')
+        .eq('user_id', user!.id)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching emails:', error)
+        addToast('error', 'Erreur de chargement', 'Impossible de récupérer les emails.')
+      } else {
+        setEmails(data ?? [])
+      }
+      setIsLoading(false)
+    }
+
+    fetchEmails()
+  }, [user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Realtime subscription ─────────────────────────────────────────────────
+  useEffect(() => {
+    if (!user?.id) return
+
+    const channel = supabase
+      .channel(`emails:user_id=eq.${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'emails',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const newEmail = payload.new as SupabaseEmail
+          setEmails((prev) => [newEmail, ...prev])
+          addToast('info', 'Nouvel email analysé', `De : ${newEmail.from_email}`)
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Filtering & pagination ────────────────────────────────────────────────
   const filtered = useMemo(() => {
-    return mockEmails.filter((e) => {
-      const matchTab = activeTab === 'all' || e.status === activeTab
+    return emails.filter((e) => {
+      const displayStatus = deriveDisplayStatus(e)
+
+      const matchTab =
+        activeTab === 'all' ||
+        displayStatus === activeTab
+
       const matchSearch =
         !search ||
-        e.from.toLowerCase().includes(search.toLowerCase()) ||
-        e.fromEmail.toLowerCase().includes(search.toLowerCase()) ||
-        e.subject.toLowerCase().includes(search.toLowerCase()) ||
-        e.to.toLowerCase().includes(search.toLowerCase())
+        e.from_email.toLowerCase().includes(search.toLowerCase()) ||
+        e.subject.toLowerCase().includes(search.toLowerCase())
+
       const matchSeverity =
         severityFilter === 'all' ||
-        (severityFilter === 'high' && e.aiScore >= 80) ||
-        (severityFilter === 'medium' && e.aiScore >= 40 && e.aiScore < 80) ||
-        (severityFilter === 'low' && e.aiScore < 40)
+        (severityFilter === 'high' && e.ai_score >= 80) ||
+        (severityFilter === 'medium' && e.ai_score >= 40 && e.ai_score < 80) ||
+        (severityFilter === 'low' && e.ai_score < 40)
+
       return matchTab && matchSearch && matchSeverity
     })
-  }, [search, activeTab, severityFilter])
+  }, [emails, search, activeTab, severityFilter])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   const counts = useMemo(() => ({
-    all: mockEmails.length,
-    safe: mockEmails.filter((e) => e.status === 'safe').length,
-    suspicious: mockEmails.filter((e) => e.status === 'suspicious').length,
-    malicious: mockEmails.filter((e) => e.status === 'malicious').length,
-  }), [])
+    all: emails.length,
+    safe: emails.filter((e) => deriveDisplayStatus(e) === 'safe').length,
+    suspicious: emails.filter((e) => deriveDisplayStatus(e) === 'suspicious').length,
+    malicious: emails.filter((e) => deriveDisplayStatus(e) === 'malicious').length,
+  }), [emails])
 
   const handleAction = (action: string) => {
     const msgs: Record<string, string> = {
@@ -141,6 +241,7 @@ export default function EmailsPage() {
     setSelectedEmail(null)
   }
 
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -151,7 +252,9 @@ export default function EmailsPage() {
       >
         <div>
           <h1 className="text-2xl font-bold text-[#eaf2fb]">Emails Analysés</h1>
-          <p className="text-[#7a96b4] text-sm mt-0.5">{mockEmails.length} emails dans la base</p>
+          <p className="text-[#7a96b4] text-sm mt-0.5">
+            {isLoading ? 'Chargement…' : `${emails.length} email${emails.length !== 1 ? 's' : ''} dans la base`}
+          </p>
         </div>
       </motion.div>
 
@@ -205,7 +308,7 @@ export default function EmailsPage() {
               <Search size={15} className="text-[#7a96b4] flex-shrink-0" />
               <input
                 type="text"
-                placeholder="Rechercher expéditeur, sujet, destinataire..."
+                placeholder="Rechercher expéditeur, sujet…"
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1) }}
                 className="bg-transparent text-[#eaf2fb] text-sm outline-none w-full placeholder:text-[#7a96b4]"
@@ -232,108 +335,123 @@ export default function EmailsPage() {
         transition={{ delay: 0.15 }}
       >
         <Card className="p-0 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[#1a2740]">
-                  <th className="text-left text-[#7a96b4] font-medium px-4 py-3">De</th>
-                  <th className="text-left text-[#7a96b4] font-medium px-4 py-3">À</th>
-                  <th className="text-left text-[#7a96b4] font-medium px-4 py-3">Sujet</th>
-                  <th className="text-left text-[#7a96b4] font-medium px-4 py-3">Reçu</th>
-                  <th className="text-left text-[#7a96b4] font-medium px-4 py-3">Statut</th>
-                  <th className="text-left text-[#7a96b4] font-medium px-4 py-3 min-w-[120px]">Score IA</th>
-                  <th className="text-left text-[#7a96b4] font-medium px-4 py-3">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginated.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-12 text-center text-[#7a96b4]">
-                      Aucun email trouvé.
-                    </td>
+          {/* Loading state */}
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-4 text-[#7a96b4]">
+              <Loader2 size={36} className="animate-spin text-[#7dd3fc]" />
+              <p className="text-sm">Chargement des emails…</p>
+            </div>
+          ) : emails.length === 0 ? (
+            /* Empty state (no emails at all) */
+            <div className="flex flex-col items-center justify-center py-20 gap-4 text-[#7a96b4]">
+              <InboxIcon size={48} className="text-[#1a2740]" />
+              <p className="text-base font-medium text-[#eaf2fb]">Aucun email analysé</p>
+              <p className="text-sm">Les emails analysés par Guardia apparaîtront ici.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[#1a2740]">
+                    <th className="text-left text-[#7a96b4] font-medium px-4 py-3">De</th>
+                    <th className="text-left text-[#7a96b4] font-medium px-4 py-3">Sujet</th>
+                    <th className="text-left text-[#7a96b4] font-medium px-4 py-3">Reçu</th>
+                    <th className="text-left text-[#7a96b4] font-medium px-4 py-3">Statut</th>
+                    <th className="text-left text-[#7a96b4] font-medium px-4 py-3 min-w-[120px]">Score IA</th>
+                    <th className="text-left text-[#7a96b4] font-medium px-4 py-3">Actions</th>
                   </tr>
-                ) : (
-                  paginated.map((email) => (
-                    <tr
-                      key={email.id}
-                      className="border-b border-[#1a2740]/40 hover:bg-white/[0.02] transition-colors cursor-pointer"
-                      onClick={() => setSelectedEmail(email)}
-                    >
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <Avatar name={email.from} size="sm" />
-                          <div>
-                            <p className="text-[#eaf2fb] font-medium truncate max-w-[110px]">{email.from}</p>
-                            <p className="text-[#7a96b4] text-xs truncate max-w-[110px]">{email.fromEmail}</p>
-                          </div>
+                </thead>
+                <tbody>
+                  {paginated.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-12 text-center text-[#7a96b4]">
+                        <div className="flex flex-col items-center gap-3">
+                          <InboxIcon size={32} className="text-[#1a2740]" />
+                          <span>Aucun email correspond à votre recherche.</span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-[#7a96b4] truncate max-w-[130px]">{email.to}</td>
-                      <td className="px-4 py-3">
-                        <p className="text-[#eaf2fb] truncate max-w-[200px]">{email.subject}</p>
-                      </td>
-                      <td className="px-4 py-3 text-[#7a96b4] text-xs whitespace-nowrap">
-                        {formatDateTime(email.receivedAt)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <StatusBadge status={email.status} />
-                      </td>
-                      <td className="px-4 py-3 min-w-[120px]">
-                        <ScoreBar score={email.aiScore} />
-                      </td>
-                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setSelectedEmail(email)}
-                        >
-                          Détail
-                        </Button>
-                      </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          <div className="flex items-center justify-between px-4 py-3 border-t border-[#1a2740]">
-            <p className="text-[#7a96b4] text-sm">
-              {filtered.length} résultat{filtered.length !== 1 ? 's' : ''} — page {page} / {totalPages}
-            </p>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-              >
-                <ChevronLeft size={15} />
-              </Button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setPage(p)}
-                  className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
-                    p === page
-                      ? 'bg-[#7dd3fc]/15 text-[#7dd3fc] border border-[#7dd3fc]/30'
-                      : 'text-[#7a96b4] hover:bg-white/5'
-                  }`}
-                >
-                  {p}
-                </button>
-              ))}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-              >
-                <ChevronRight size={15} />
-              </Button>
+                  ) : (
+                    paginated.map((email) => (
+                      <tr
+                        key={email.id}
+                        className="border-b border-[#1a2740]/40 hover:bg-white/[0.02] transition-colors cursor-pointer"
+                        onClick={() => setSelectedEmail(email)}
+                      >
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <Avatar name={email.from_email} size="sm" />
+                            <p className="text-[#eaf2fb] text-xs truncate max-w-[160px]">{email.from_email}</p>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <p className="text-[#eaf2fb] truncate max-w-[220px]">{email.subject}</p>
+                        </td>
+                        <td className="px-4 py-3 text-[#7a96b4] text-xs whitespace-nowrap">
+                          {formatDateTime(email.created_at)}
+                        </td>
+                        <td className="px-4 py-3">
+                          <StatusBadge status={deriveDisplayStatus(email)} />
+                        </td>
+                        <td className="px-4 py-3 min-w-[120px]">
+                          <ScoreBar score={email.ai_score} />
+                        </td>
+                        <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSelectedEmail(email)}
+                          >
+                            Détail
+                          </Button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
-          </div>
+          )}
+
+          {/* Pagination — only when not loading and there are emails */}
+          {!isLoading && emails.length > 0 && (
+            <div className="flex items-center justify-between px-4 py-3 border-t border-[#1a2740]">
+              <p className="text-[#7a96b4] text-sm">
+                {filtered.length} résultat{filtered.length !== 1 ? 's' : ''} — page {page} / {totalPages}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                >
+                  <ChevronLeft size={15} />
+                </Button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setPage(p)}
+                    className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
+                      p === page
+                        ? 'bg-[#7dd3fc]/15 text-[#7dd3fc] border border-[#7dd3fc]/30'
+                        : 'text-[#7a96b4] hover:bg-white/5'
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ))}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                >
+                  <ChevronRight size={15} />
+                </Button>
+              </div>
+            </div>
+          )}
         </Card>
       </motion.div>
 
@@ -344,117 +462,95 @@ export default function EmailsPage() {
         title="Détail de l'email"
         size="lg"
       >
-        {selectedEmail && (
-          <div className="space-y-5">
-            {/* Meta */}
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="text-[#7a96b4] text-xs mb-1">De</p>
-                <p className="text-[#eaf2fb] font-semibold">{selectedEmail.from}</p>
-                <p className="text-[#7a96b4]">{selectedEmail.fromEmail}</p>
+        {selectedEmail && (() => {
+          const displayStatus = deriveDisplayStatus(selectedEmail)
+          return (
+            <div className="space-y-5">
+              {/* Meta */}
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="col-span-2">
+                  <p className="text-[#7a96b4] text-xs mb-1">De</p>
+                  <p className="text-[#eaf2fb] font-medium break-all">{selectedEmail.from_email}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-[#7a96b4] text-xs mb-1">Sujet</p>
+                  <p className="text-[#eaf2fb] font-medium">{selectedEmail.subject}</p>
+                </div>
+                <div>
+                  <p className="text-[#7a96b4] text-xs mb-1">Reçu le</p>
+                  <p className="text-[#eaf2fb]">{formatDateTime(selectedEmail.created_at)}</p>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <StatusBadge status={displayStatus} />
+                  {selectedEmail.threat_type && (
+                    <Badge variant="high">{selectedEmail.threat_type}</Badge>
+                  )}
+                </div>
               </div>
-              <div>
-                <p className="text-[#7a96b4] text-xs mb-1">À</p>
-                <p className="text-[#eaf2fb]">{selectedEmail.to}</p>
+
+              {/* AI Score Gauge */}
+              <div className="flex flex-col items-center py-2 border-t border-[#1a2740]">
+                <AIScoreGauge score={selectedEmail.ai_score} />
               </div>
-              <div className="col-span-2">
-                <p className="text-[#7a96b4] text-xs mb-1">Sujet</p>
-                <p className="text-[#eaf2fb] font-medium">{selectedEmail.subject}</p>
-              </div>
-              <div>
-                <p className="text-[#7a96b4] text-xs mb-1">Reçu le</p>
-                <p className="text-[#eaf2fb]">{formatDateTime(selectedEmail.receivedAt)}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <StatusBadge status={selectedEmail.status} />
-                {selectedEmail.threatType && (
-                  <Badge variant="high">{selectedEmail.threatType}</Badge>
+
+              {/* Risk Explanation */}
+              <div className="rounded-xl bg-[#060d18] border border-[#1a2740] p-4 text-sm text-[#7a96b4]">
+                <p className="text-[#eaf2fb] font-medium mb-1">Analyse IA</p>
+                {selectedEmail.ai_score >= 80 ? (
+                  <p>
+                    Cet email présente un risque <span className="text-[#fb7185] font-semibold">très élevé</span>.
+                    Plusieurs indicateurs critiques ont été détectés : usurpation d&apos;identité, liens malveillants
+                    et/ou pièces jointes dangereuses. Il a été automatiquement bloqué.
+                  </p>
+                ) : selectedEmail.ai_score >= 40 ? (
+                  <p>
+                    Cet email présente un risque <span className="text-[#fbbf24] font-semibold">modéré</span>.
+                    Certains éléments atypiques ont été relevés. Une vérification manuelle est recommandée
+                    avant d&apos;interagir avec son contenu.
+                  </p>
+                ) : (
+                  <p>
+                    Cet email semble <span className="text-[#34d399] font-semibold">légitime</span>.
+                    Aucun indicateur malveillant significatif n&apos;a été détecté. Le score de risque est faible.
+                  </p>
                 )}
               </div>
-            </div>
 
-            {/* AI Score Gauge */}
-            <div className="flex flex-col items-center py-2 border-t border-[#1a2740]">
-              <AIScoreGauge score={selectedEmail.aiScore} />
-            </div>
-
-            {/* Indicators */}
-            {selectedEmail.indicators && selectedEmail.indicators.length > 0 && (
-              <div className="border-t border-[#1a2740] pt-4">
-                <p className="text-[#7a96b4] text-xs mb-3 uppercase tracking-wider">
-                  Indicateurs détectés
-                </p>
-                <ul className="space-y-2">
-                  {selectedEmail.indicators.map((ind, i) => (
-                    <li
-                      key={i}
-                      className="flex items-start gap-2 text-sm text-[#eaf2fb] bg-[#060d18] rounded-lg px-3 py-2"
-                    >
-                      <span className="text-[#fb7185] flex-shrink-0">▸</span>
-                      {ind}
-                    </li>
-                  ))}
-                </ul>
+              {/* Actions */}
+              <div className="flex gap-2 pt-2 border-t border-[#1a2740]">
+                <Button
+                  variant="success"
+                  size="sm"
+                  onClick={() => handleAction('safe')}
+                >
+                  <CheckCircle size={14} /> Marquer sûr
+                </Button>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={() => handleAction('quarantine')}
+                >
+                  <Archive size={14} /> Quarantaine
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleAction('report')}
+                >
+                  <Flag size={14} /> Signaler
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="ml-auto"
+                  onClick={() => setSelectedEmail(null)}
+                >
+                  Fermer
+                </Button>
               </div>
-            )}
-
-            {/* Risk Explanation */}
-            <div className="rounded-xl bg-[#060d18] border border-[#1a2740] p-4 text-sm text-[#7a96b4]">
-              <p className="text-[#eaf2fb] font-medium mb-1">Analyse IA</p>
-              {selectedEmail.aiScore >= 80 ? (
-                <p>
-                  Cet email présente un risque <span className="text-[#fb7185] font-semibold">très élevé</span>.
-                  Plusieurs indicateurs critiques ont été détectés : usurpation d'identité, liens malveillants
-                  et/ou pièces jointes dangereuses. Il a été automatiquement bloqué.
-                </p>
-              ) : selectedEmail.aiScore >= 40 ? (
-                <p>
-                  Cet email présente un risque <span className="text-[#fbbf24] font-semibold">modéré</span>.
-                  Certains éléments atypiques ont été relevés. Une vérification manuelle est recommandée
-                  avant d'interagir avec son contenu.
-                </p>
-              ) : (
-                <p>
-                  Cet email semble <span className="text-[#34d399] font-semibold">légitime</span>.
-                  Aucun indicateur malveillant significatif n'a été détecté. Le score de risque est faible.
-                </p>
-              )}
             </div>
-
-            {/* Actions */}
-            <div className="flex gap-2 pt-2 border-t border-[#1a2740]">
-              <Button
-                variant="success"
-                size="sm"
-                onClick={() => handleAction('safe')}
-              >
-                <CheckCircle size={14} /> Marquer sûr
-              </Button>
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={() => handleAction('quarantine')}
-              >
-                <Archive size={14} /> Quarantaine
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleAction('report')}
-              >
-                <Flag size={14} /> Signaler
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="ml-auto"
-                onClick={() => setSelectedEmail(null)}
-              >
-                Fermer
-              </Button>
-            </div>
-          </div>
-        )}
+          )
+        })()}
       </Modal>
     </div>
   )
