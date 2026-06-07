@@ -12,6 +12,7 @@ import { createClient } from '@/lib/supabase/client'
 interface Threat {
   id: string
   created_at: string
+  detected_at?: string
   type: string
   severity: string
   sender_email: string
