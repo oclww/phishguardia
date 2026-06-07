@@ -24,7 +24,7 @@ export default function TermsPage() {
       <main className="pt-28 pb-20 px-4">
         <div className="max-w-5xl mx-auto">
           <div className="mb-10">
-            <span className="text-xs text-[#7a96b4]">Dernière mise à jour : 1er janvier 2024</span>
+            <span className="text-xs text-[#7a96b4]">Dernière mise à jour : 8 juin 2026</span>
             <h1 className="text-3xl font-bold text-[#eaf2fb] mt-2" style={{ fontFamily: 'Syne, sans-serif' }}>
               Conditions Générales d&apos;Utilisation
             </h1>
@@ -56,7 +56,7 @@ export default function TermsPage() {
               </section>
               <section id="service">
                 <h2 className="text-xl font-bold text-[#eaf2fb] mb-3" style={{ fontFamily: 'Syne, sans-serif' }}>3. Description du service</h2>
-                <p className="text-sm text-[#7a96b4] leading-relaxed">PhishGuard.IA propose un service d&apos;analyse d&apos;emails par intelligence artificielle permettant de détecter les tentatives de phishing, malwares, et autres menaces. Le service est fourni en mode SaaS (Software as a Service) via une interface web et une API REST. La disponibilité du service est garantie selon le SLA applicable au plan souscrit.</p>
+                <p className="text-sm text-[#7a96b4] leading-relaxed">PhishGuard.IA propose un service d&apos;analyse d&apos;emails par intelligence artificielle permettant de détecter les tentatives de phishing, malwares, et autres menaces. Le service est fourni en mode SaaS (Software as a Service) via une interface web et une API REST.</p>
               </section>
               <section id="compte">
                 <h2 className="text-xl font-bold text-[#eaf2fb] mb-3" style={{ fontFamily: 'Syne, sans-serif' }}>4. Création de compte</h2>

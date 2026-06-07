@@ -3,9 +3,19 @@ import './globals.css'
 import { Providers } from './providers'
 
 export const metadata: Metadata = {
-  title: 'PhishGuard.IA — Protection Anti-Phishing par IA',
-  description: 'Protégez votre organisation contre le phishing avec notre IA de détection en temps réel. 99.7% de précision, 2.3ms de réponse.',
-  keywords: 'phishing, cybersécurité, IA, protection email, anti-phishing',
+  title: { default: 'PhishGuard.IA — Détection anti-phishing par IA', template: '%s | PhishGuard.IA' },
+  description: "PhishGuard.IA analyse vos emails en temps réel avec l'IA pour détecter phishing, BEC et spear-phishing. API REST simple, résultats en moins de 2 secondes.",
+  keywords: ['phishing', 'anti-phishing', 'cybersécurité', 'détection email', 'IA', 'API', 'BEC', 'sécurité email'],
+  authors: [{ name: 'PhishGuard.IA' }],
+  openGraph: {
+    title: 'PhishGuard.IA — Détection anti-phishing par IA',
+    description: "Protégez vos emails contre le phishing avec l'IA. Score de risque en temps réel, API REST, dashboard.",
+    url: 'https://phishguardia.vercel.app',
+    siteName: 'PhishGuard.IA',
+    locale: 'fr_FR',
+    type: 'website',
+  },
+  robots: { index: true, follow: true },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

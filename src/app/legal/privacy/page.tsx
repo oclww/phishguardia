@@ -24,7 +24,7 @@ export default function PrivacyPage() {
       <main className="pt-28 pb-20 px-4">
         <div className="max-w-5xl mx-auto">
           <div className="mb-10">
-            <span className="text-xs text-[#7a96b4]">Dernière mise à jour : 1er janvier 2024</span>
+            <span className="text-xs text-[#7a96b4]">Dernière mise à jour : 8 juin 2026</span>
             <h1 className="text-3xl font-bold text-[#eaf2fb] mt-2" style={{ fontFamily: 'Syne, sans-serif' }}>
               Politique de Confidentialité
             </h1>
@@ -58,8 +58,8 @@ export default function PrivacyPage() {
               <section id="responsable">
                 <h2 className="text-xl font-bold text-[#eaf2fb] mb-3" style={{ fontFamily: 'Syne, sans-serif' }}>2. Responsable du traitement</h2>
                 <div className="space-y-3 text-sm text-[#7a96b4] leading-relaxed">
-                  <p>Le responsable du traitement est la société PhishGuard.IA SAS, société par actions simplifiée au capital de 500 000€, immatriculée au RCS de Paris sous le numéro 123 456 789, dont le siège social est situé au 25 Rue de la Paix, 75008 Paris, France.</p>
-                  <p>Pour toute question relative au traitement de vos données, vous pouvez nous contacter à l'adresse email : <span className="text-[#7dd3fc]">dpo@phishguard.ia</span></p>
+                  <p>PhishGuard.IA est un projet développé par Matis L., Sami H. et Lucas M. (équipe fondatrice). La structure juridique est en cours de création.</p>
+                  <p>Pour toute question relative au traitement de vos données, vous pouvez nous contacter à l'adresse email : <span className="text-[#7dd3fc]">oclaw78@gmail.com</span></p>
                 </div>
               </section>
               <section id="donnees">
@@ -92,14 +92,14 @@ export default function PrivacyPage() {
               <section id="destinataires">
                 <h2 className="text-xl font-bold text-[#eaf2fb] mb-3" style={{ fontFamily: 'Syne, sans-serif' }}>7. Destinataires des données</h2>
                 <div className="space-y-3 text-sm text-[#7a96b4] leading-relaxed">
-                  <p>Vos données peuvent être partagées avec nos sous-traitants : hébergeur cloud (AWS, UE), prestataire de paiement (Stripe), outil d'emailing (Postmark), support client (Intercom). Tous sont soumis à des contrats de traitement conformes au RGPD. Aucune donnée n'est vendue à des tiers.</p>
+                  <p>Vos données peuvent être partagées avec nos sous-traitants : Supabase (hébergeur base de données), Vercel (hébergeur web), Stripe (paiement), Google Gemini (analyse IA). Tous sont soumis à des contrats de traitement conformes au RGPD. Aucune donnée n'est vendue à des tiers.</p>
                 </div>
               </section>
               <section id="droits">
                 <h2 className="text-xl font-bold text-[#eaf2fb] mb-3" style={{ fontFamily: 'Syne, sans-serif' }}>8. Vos droits (RGPD)</h2>
                 <div className="space-y-3 text-sm text-[#7a96b4] leading-relaxed">
                   <p>Vous disposez des droits suivants : <strong className="text-[#eaf2fb]">accès</strong> (obtenir une copie de vos données), <strong className="text-[#eaf2fb]">rectification</strong> (corriger des données inexactes), <strong className="text-[#eaf2fb]">effacement</strong> ("droit à l'oubli"), <strong className="text-[#eaf2fb]">portabilité</strong> (recevoir vos données en format structuré), <strong className="text-[#eaf2fb]">opposition</strong> (s'opposer à certains traitements), <strong className="text-[#eaf2fb]">limitation</strong> du traitement.</p>
-                  <p>Pour exercer vos droits, contactez-nous à <span className="text-[#7dd3fc]">dpo@phishguard.ia</span>. Vous pouvez également introduire une réclamation auprès de la CNIL (www.cnil.fr).</p>
+                  <p>Pour exercer vos droits, contactez-nous à <span className="text-[#7dd3fc]">oclaw78@gmail.com</span>. Vous pouvez également introduire une réclamation auprès de la CNIL (www.cnil.fr).</p>
                 </div>
               </section>
               <section id="cookies">
@@ -111,15 +111,14 @@ export default function PrivacyPage() {
               <section id="securite">
                 <h2 className="text-xl font-bold text-[#eaf2fb] mb-3" style={{ fontFamily: 'Syne, sans-serif' }}>10. Sécurité</h2>
                 <div className="space-y-3 text-sm text-[#7a96b4] leading-relaxed">
-                  <p>Nous appliquons des mesures techniques et organisationnelles appropriées : chiffrement TLS 1.3 en transit, AES-256 au repos, accès restreint par rôle, tests de pénétration trimestriels, monitoring 24/7, sauvegardes chiffrées.</p>
+                  <p>Nous appliquons des mesures techniques et organisationnelles appropriées : chiffrement TLS en transit, chiffrement au repos, accès restreint par rôle, monitoring continu et sauvegardes chiffrées.</p>
                 </div>
               </section>
               <section id="contact">
                 <h2 className="text-xl font-bold text-[#eaf2fb] mb-3" style={{ fontFamily: 'Syne, sans-serif' }}>11. Contact et DPO</h2>
                 <div className="space-y-3 text-sm text-[#7a96b4] leading-relaxed">
-                  <p>Délégué à la Protection des Données : <strong className="text-[#eaf2fb]">Me. Claire Fontaine</strong></p>
-                  <p>Email : <span className="text-[#7dd3fc]">dpo@phishguard.ia</span></p>
-                  <p>Adresse : PhishGuard.IA SAS — DPO — 25 Rue de la Paix, 75008 Paris</p>
+                  <p>Référent protection des données : <strong className="text-[#eaf2fb]">Équipe PhishGuard.IA</strong></p>
+                  <p>Email : <span className="text-[#7dd3fc]">oclaw78@gmail.com</span></p>
                 </div>
               </section>
             </div>
