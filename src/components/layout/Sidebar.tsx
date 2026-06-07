@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   Shield, LayoutDashboard, Mail, AlertTriangle, Bell,
-  BarChart2, Search, CreditCard, Users, Settings, LogOut,
+  BarChart2, CreditCard, Users, Settings, LogOut,
   ChevronLeft, ChevronRight, Zap, X, Menu,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -27,7 +27,6 @@ const sections = [
     label: 'ANALYSE',
     items: [
       { href: '/dashboard/reports', icon: BarChart2, label: 'Rapports',    badge: null },
-      { href: '/dashboard/search',  icon: Search,    label: 'Recherche',   badge: null },
       { href: '/dashboard/billing', icon: CreditCard,label: 'Facturation', badge: null },
     ],
   },

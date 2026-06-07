@@ -53,11 +53,7 @@ function Toggle({
   )
 }
 
-const sessions = [
-  { device: 'Chrome — macOS', ip: '192.168.1.42', location: 'Paris, France', current: true, lastSeen: 'Maintenant' },
-  { device: 'Safari — iPhone', ip: '82.64.19.7', location: 'Paris, France', current: false, lastSeen: 'Il y a 2 heures' },
-  { device: 'Firefox — Windows', ip: '91.198.14.22', location: 'Lyon, France', current: false, lastSeen: 'Il y a 3 jours' },
-]
+// Sessions are loaded from Supabase (user_sessions table) — see dbSessions state below
 
 export default function SettingsPage() {
   const { user } = useAuth()
@@ -120,9 +116,9 @@ export default function SettingsPage() {
 
   // Integrations
   const [integrations, setIntegrations] = useState({
-    slack: { connected: true, webhook: 'https://hooks.slack.com/services/T0X9B/B08N7/xxxxx' },
+    slack: { connected: false, webhook: '' },
     teams: { connected: false, webhook: '' },
-    zapier: { connected: true, webhook: 'https://hooks.zapier.com/hooks/catch/xxxxxx/yyyyy' },
+    zapier: { connected: false, webhook: '' },
     apiWebhook: { connected: false, webhook: '' },
   })
 
@@ -331,7 +327,8 @@ export default function SettingsPage() {
               <div>
                 <label className="block text-[#7a96b4] text-xs mb-1.5">Plan</label>
                 <div className="flex items-center gap-2 h-10">
-                  <Badge variant="success">Pro</Badge>
+                  <Badge variant="info">Gratuit</Badge>
+                  <span className="text-[#7a96b4] text-xs">· Gérer depuis Facturation</span>
                 </div>
               </div>
             </div>
@@ -481,7 +478,7 @@ export default function SettingsPage() {
             </div>
             
             {dbSessions.length === 0 ? (
-              <p className="text-sm text-[#7a96b4]">Chargement des sessions... (Assurez-vous d'avoir exécuté le script SQL si cela reste vide)</p>
+              <p className="text-sm text-[#7a96b4]">Aucune session active trouvée. La gestion de sessions sera disponible prochainement.</p>
             ) : (
               <div className="space-y-3">
                 {dbSessions.map((s) => {
