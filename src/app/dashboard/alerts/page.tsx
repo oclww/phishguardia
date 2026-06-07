@@ -40,7 +40,7 @@ export default function AlertsPage() {
         .from('threats')
         .select('*')
         .eq('user_id', user?.id)
-        .order('created_at', { ascending: false })
+        .order('detected_at', { ascending: false })
 
       if (error) throw error
       setAlerts(data || [])
@@ -135,7 +135,7 @@ export default function AlertsPage() {
                         </span>
                         <span className="flex items-center gap-1 text-[#7a96b4] text-xs ml-auto">
                           <Clock size={12} />
-                          {new Date(alert.created_at).toLocaleString('fr-FR', {
+                          {new Date(alert.detected_at || alert.created_at).toLocaleString('fr-FR', {
                             day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
                           })}
                         </span>
