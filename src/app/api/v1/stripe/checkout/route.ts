@@ -32,8 +32,7 @@ export async function POST(request: Request) {
     }
 
     if (!priceId) {
-      console.error(`Le prix Stripe n'est pas configuré pour le plan ${planId} (${interval}).`)
-      return NextResponse.json({ error: `Le plan ${planId.toUpperCase()} n'a pas encore été configuré dans Stripe.` }, { status: 400 })
+      return NextResponse.json({ error: `Plan non configuré` }, { status: 400 })
     }
 
     // Récupérer le client Stripe existant s'il existe
@@ -57,8 +56,8 @@ export async function POST(request: Request) {
         },
       ],
       mode: 'subscription',
-      success_url: `${request.headers.get('origin')}/dashboard/billing?success=true`,
-      cancel_url: `${request.headers.get('origin')}/dashboard/billing?canceled=true`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing?success=true`,
+      cancel_url:  `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing?canceled=true`,
       // Le client_reference_id est CRUCIAL, il nous permettra d'identifier
       // l'utilisateur dans le Webhook quand il paiera.
       client_reference_id: user.id,
@@ -66,8 +65,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ url: session.url })
 
-  } catch (error: any) {
-    console.error('Checkout error:', error)
-    return NextResponse.json({ error: 'Erreur Serveur Interne', details: error.message }, { status: 500 })
+  } catch {
+    return NextResponse.json({ error: 'Erreur Serveur Interne' }, { status: 500 })
   }
 }

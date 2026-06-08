@@ -3,8 +3,22 @@ import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
+
+const MAX_BODY_LENGTH    = 50000
+const MAX_SUBJECT_LENGTH = 998
+const MAX_FROM_LENGTH    = 320
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+}
+
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: corsHeaders })
+}
 
 // ─── Re-use the same detection logic as /api/v1/analyze ──────────────────────
 // (Same 8 signal analyzers — kept in sync manually until shared module)

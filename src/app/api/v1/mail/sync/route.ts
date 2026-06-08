@@ -212,9 +212,12 @@ async function enrichWithGemini(from: string, subject: string, body: string): Pr
 
 // ─── Main sync handler ────────────────────────────────────────────────────────
 export async function POST(request: NextRequest) {
-  // Security: only allow internal calls (cron or manual)
+  // Security: only allow calls from authenticated cron or internal services
   const authHeader = request.headers.get('Authorization')
-  const cronSecret = process.env.CRON_SECRET || 'phishguard-cron-2026'
+  const cronSecret = process.env.CRON_SECRET
+  if (!cronSecret) {
+    return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 })
+  }
   if (authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -301,8 +304,8 @@ export async function POST(request: NextRequest) {
               }])
               threatsFound++
             }
-          } catch (emailErr) {
-            console.error(`Error processing message ${msgId}:`, emailErr)
+          } catch {
+            // Skip this message and continue
           }
         }
 
@@ -319,14 +322,13 @@ export async function POST(request: NextRequest) {
         }).eq('id', conn.id)
 
         results.push({ email: conn.email, newEmails: messageIds.length, threatsFound })
-      } catch (connErr: any) {
-        console.error(`Error syncing ${conn.email}:`, connErr)
-        results.push({ email: conn.email, error: connErr.message })
+      } catch {
+        results.push({ email: conn.email, error: 'sync_failed' })
       }
     }
 
     return NextResponse.json({ success: true, processed: connections.length, results })
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 })
+  } catch {
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }

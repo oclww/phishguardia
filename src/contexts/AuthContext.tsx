@@ -90,14 +90,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       else if (ua.includes("iPhone") || ua.includes("iPad")) osType = "iOS";
       else if (ua.includes("Android")) osType = "Android";
 
-      let ip = "Inconnue";
-      try {
-         const res = await fetch('https://api.ipify.org?format=json');
-         if (res.ok) {
-            const data = await res.json();
-            ip = data.ip;
-         }
-      } catch(e) {}
+      let ip = 'Inconnue'
+      // IP resolution removed — do not call external services on login
 
       const { data } = await supabase.from('user_sessions').insert({
         user_id: userId,
@@ -203,12 +197,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch(e) {
       console.error("Erreur de déconnexion:", e)
     } finally {
-      // Forcer le nettoyage radical côté navigateur
-      localStorage.clear()
-      sessionStorage.clear()
-      document.cookie.split(";").forEach((c) => {
-        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-      });
+      // Remove only auth-specific keys — don't nuke other libraries' storage
+      ;['tracked_session', 'sb-access-token', 'sb-refresh-token'].forEach(k => {
+        try { localStorage.removeItem(k) } catch {}
+        try { sessionStorage.removeItem(k) } catch {}
+      })
       
       setUser(null)
       setIsLoading(false)

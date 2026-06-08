@@ -3,36 +3,54 @@ import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
+
+// ─── Simple email format validation ───────────────────────────────────────────
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export async function POST(request: Request) {
   try {
-    const { name, email, company, subject, message } = await request.json()
-
-    if (!name || !email || !message) {
-      return NextResponse.json({ error: 'Champs requis manquants' }, { status: 400 })
+    let payload: any
+    try {
+      payload = await request.json()
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
     }
 
-    // Save to Supabase (table contact_messages)
+    const { name, email, company, subject, message } = payload
+
+    // ── Validation ──────────────────────────────────────────────────────────
+    if (!name || !email || !message) {
+      return NextResponse.json({ error: 'Champs requis manquants (name, email, message)' }, { status: 400 })
+    }
+    if (!EMAIL_RE.test(email)) {
+      return NextResponse.json({ error: 'Adresse email invalide' }, { status: 400 })
+    }
+    if (String(name).length > 100 || String(message).length > 5000) {
+      return NextResponse.json({ error: 'Champs trop longs' }, { status: 400 })
+    }
+
+    // ── Persist ──────────────────────────────────────────────────────────────
     const { error } = await supabase.from('contact_messages').insert([{
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-      company: company?.trim() || null,
-      subject: subject?.trim() || 'Contact depuis le site',
-      message: message.trim(),
-      created_at: new Date().toISOString(),
-      read: false,
+      name:    String(name).trim().slice(0, 100),
+      email:   String(email).trim().toLowerCase().slice(0, 254),
+      company: company ? String(company).trim().slice(0, 100) : null,
+      subject: subject ? String(subject).trim().slice(0, 200) : 'Contact depuis le site',
+      message: String(message).trim().slice(0, 5000),
+      read:    false,
     }])
 
-    // If table doesn't exist yet, still return success (message won't be lost if Supabase is set up)
-    if (error && !error.message.includes('does not exist')) {
-      console.error('[contact] Supabase error:', error)
-      return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
+    if (error) {
+      // Table may not exist yet — still return success so the user isn't stuck
+      if (!error.message.includes('does not exist')) {
+        return NextResponse.json({ error: 'Erreur serveur, veuillez réessayer' }, { status: 500 })
+      }
     }
 
     return NextResponse.json({ success: true })
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 })
+
+  } catch {
+    return NextResponse.json({ error: 'Erreur serveur, veuillez réessayer' }, { status: 500 })
   }
 }
